@@ -7,6 +7,7 @@
 backend/.gradle/
 backend/build/
 backend/out/
+backend/bin/
 
 # Spring secrets
 backend/src/main/resources/application-secret.yml

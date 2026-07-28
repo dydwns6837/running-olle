@@ -46,8 +46,7 @@ cd backend
 gradle bootRun
 ```
 
-로컬 DB 설정은 `backend/src/main/resources/application-secret.example.yml`을 복사하여
-`application-secret.yml`로 만든 뒤 실제 값을 입력합니다.
+로컬 DB 설정은 `application-secret.yml`로 만든 뒤 실제 값을 입력합니다.
 
 ## Branch Strategy
 

@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: running_olle_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: running_olle
+      POSTGRES_USER: running_olle_user
+      POSTGRES_PASSWORD: running_olle_pw
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U running_olle_user -d running_olle"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

@@ -3,13 +3,24 @@ spring:
     name: running-olle
   profiles:
     include: secret
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
+        dialect: org.hibernate.spatial.dialect.postgis.PostgisPG10Dialect
         format_sql: true
+    show-sql: true
 
 server:
   port: 8080
+
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.springframework.security: info

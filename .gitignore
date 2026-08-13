@@ -19,6 +19,7 @@ frontend/dist/
 frontend/.vite/
 
 # Environment
+.env
 frontend/.env
 frontend/.env.local
 frontend/.env.*.local

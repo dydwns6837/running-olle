@@ -24,7 +24,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User kakaoUser = super.loadUser(userRequest);
-        String kakaoId = String.valueOf(kakaoUser.getAttribute("id"));
+        Object kakaoIdAttribute = kakaoUser.getAttribute("id");
+        if (kakaoIdAttribute == null) {
+            throw new OAuth2AuthenticationException(
+                    new OAuth2Error("missing_kakao_id"),
+                    "카카오 사용자 ID가 없습니다."
+            );
+        }
+        String kakaoId = kakaoIdAttribute.toString();
 
         User user = userRepository.findByKakaoId(kakaoId)
                 .orElseGet(() -> userRepository.save(User.createKakaoUser(kakaoId)));

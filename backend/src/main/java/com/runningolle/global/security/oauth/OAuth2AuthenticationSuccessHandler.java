@@ -28,7 +28,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             Authentication authentication
     ) throws IOException, ServletException {
         OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-        String userId = String.valueOf(oAuth2User.getAttribute("localUserId"));
+        String userId = oAuth2User.getAttribute("localUserId");
         boolean onboardingCompleted = Boolean.TRUE.equals(oAuth2User.getAttribute("onboardingCompleted"));
         String accessToken = jwtTokenProvider.createToken(userId, java.util.Map.of(
                 "provider", "kakao",

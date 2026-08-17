@@ -24,6 +24,6 @@ public class OAuth2AuthenticationFailureHandler extends SimpleUrlAuthenticationF
             AuthenticationException exception
     ) throws IOException, ServletException {
         String message = URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8);
-        getRedirectStrategy().sendRedirect(request, response, frontendUrl + "/?oauth_error=" + message);
+        getRedirectStrategy().sendRedirect(request, response, frontendUrl + "/login?oauth_error=" + message);
     }
 }

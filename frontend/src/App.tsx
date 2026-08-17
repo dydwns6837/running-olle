@@ -1,22 +1,35 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import { RequireAuth } from './components/auth/RequireAuth'
+import { AppLayout } from './components/layout/AppLayout'
+import { user } from './mocks/home'
+import { LoginPage } from './pages/Auth/LoginPage'
+import { OAuthCallbackPage } from './pages/Auth/OAuthCallbackPage'
+import { OnboardingPage } from './pages/Auth/OnboardingPage'
+import { CommunityPage } from './pages/Community/CommunityPage'
+import { CoursesPage } from './pages/Courses/CoursesPage'
+import { HomePage } from './pages/Home/HomePage'
+import { MyPage } from './pages/MyPage/MyPage'
 
-function HomePage() {
+export default function App() {
   return (
-    <main className="min-h-screen p-6">
-      <h1 className="text-2xl font-bold">Running Olle</h1>
-      <p className="mt-2">러닝과 여행을 연결하는 위치 기반 서비스</p>
-    </main>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+
+      <Route element={<RequireAuth onboarding="incomplete" />}>
+        <Route path="/onboarding" element={<OnboardingPage />} />
+      </Route>
+
+      <Route element={<RequireAuth onboarding="required" />}>
+        <Route element={<AppLayout leftSlot={<span>📍 {user.location}</span>} />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/community" element={<CommunityPage />} />
+          <Route path="/mypage" element={<MyPage />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   )
 }
-
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-      </Routes>
-    </BrowserRouter>
-  )
-}
-
-export default App

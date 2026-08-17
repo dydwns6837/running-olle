@@ -97,7 +97,7 @@ export function OnboardingPage() {
     reader.readAsDataURL(file)
   }
 
-  const goBack = () => step === 1 ? navigate('/') : setStep((value) => value - 1)
+  const goBack = () => step === 1 ? navigate('/login') : setStep((value) => value - 1)
 
   const next = async () => {
     setError('')
@@ -111,7 +111,7 @@ export function OnboardingPage() {
     setSubmitting(true)
     try {
       await axiosInstance.post('/api/users/me/onboarding', form)
-      navigate('/main', { replace: true })
+      navigate('/', { replace: true })
     } catch (requestError: unknown) {
       const message = isApiError(requestError)
         ? requestError.response?.data?.message

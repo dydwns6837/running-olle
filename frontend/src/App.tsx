@@ -13,13 +13,13 @@ import { MyPage } from './pages/MyPage/MyPage'
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<LoginPage />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
       <Route element={<RequireAuth />}>
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route element={<AppLayout leftSlot={<span>📍 {user.location}</span>} />}>
-          <Route path="/main" element={<HomePage />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/mypage" element={<MyPage />} />

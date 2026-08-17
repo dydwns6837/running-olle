@@ -18,7 +18,7 @@ export function OAuthCallbackPage() {
     }
 
     localStorage.setItem(TOKEN_KEY, token)
-    navigate(completed ? '/main' : '/onboarding', { replace: true })
+    navigate(completed ? '/' : '/onboarding', { replace: true })
   }, [navigate])
 
   return <main className="center-page"><div className="spinner" /><p>{error || '카카오 로그인 중입니다…'}</p></main>

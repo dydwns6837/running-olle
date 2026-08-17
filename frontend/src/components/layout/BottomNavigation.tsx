@@ -7,14 +7,14 @@ type NavigationItem = {
 }
 
 const navigationItems: NavigationItem[] = [
-  { label: '홈', path: '/main', icon: '⌂' },
+  { label: '홈', path: '/', icon: '⌂' },
   { label: '코스', path: '/courses', icon: '◇' },
   { label: '커뮤니티', path: '/community', icon: '♙' },
   { label: '마이', path: '/mypage', icon: '♙' },
 ]
 
 function getIsActive(currentPath: string, itemPath: string) {
-  return currentPath.startsWith(itemPath)
+  return itemPath === '/' ? currentPath === '/' : currentPath.startsWith(itemPath)
 }
 
 export function BottomNavigation() {

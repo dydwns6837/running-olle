@@ -32,6 +32,11 @@ public class UserService {
         return nickname != null && !nickname.isBlank() && !userRepository.existsByNickname(nickname.trim());
     }
 
+    @Transactional(readOnly = true)
+    public void validateActiveUser(UUID userId) {
+        getActiveUser(userId);
+    }
+
     @Transactional
     public void completeOnboarding(UUID userId, OnboardingRequest request) {
         User user = getActiveUser(userId);

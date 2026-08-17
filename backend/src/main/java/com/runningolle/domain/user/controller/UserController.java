@@ -28,6 +28,12 @@ public class UserController {
         return Map.of("available", userService.isNicknameAvailable(nickname));
     }
 
+    @GetMapping("/me")
+    public ResponseEntity<Void> validateCurrentUser(Authentication authentication) {
+        userService.validateActiveUser(UUID.fromString(authentication.getName()));
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/me/onboarding")
     public ResponseEntity<Void> completeOnboarding(
             Authentication authentication,

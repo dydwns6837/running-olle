@@ -4,22 +4,37 @@ import { axiosInstance } from '../../api/axiosInstance'
 
 const TOKEN_KEY = 'runningOlleAccessToken'
 
-export function RequireAuth() {
+type OnboardingRequirement = 'required' | 'incomplete' | 'none'
+
+type CurrentUserResponse = {
+  onboardingCompleted: boolean
+}
+
+type Session = {
+  authenticated: boolean
+  onboardingCompleted: boolean
+}
+
+export function RequireAuth({ onboarding = 'none' }: { onboarding?: OnboardingRequirement }) {
   const token = localStorage.getItem(TOKEN_KEY)
-  const [authenticated, setAuthenticated] = useState<boolean | null>(token ? null : false)
+  const [session, setSession] = useState<Session | null>(
+    token ? null : { authenticated: false, onboardingCompleted: false },
+  )
 
   useEffect(() => {
     if (!token) return
 
     let active = true
 
-    axiosInstance.get('/api/users/me')
-      .then(() => {
-        if (active) setAuthenticated(true)
+    axiosInstance.get<CurrentUserResponse>('/api/users/me')
+      .then(({ data }) => {
+        if (active) {
+          setSession({ authenticated: true, onboardingCompleted: data.onboardingCompleted })
+        }
       })
       .catch(() => {
         localStorage.removeItem(TOKEN_KEY)
-        if (active) setAuthenticated(false)
+        if (active) setSession({ authenticated: false, onboardingCompleted: false })
       })
 
     return () => {
@@ -27,9 +42,17 @@ export function RequireAuth() {
     }
   }, [token])
 
-  if (authenticated === null) {
+  if (session === null) {
     return <main className="center-page"><div className="spinner" /><p>로그인 정보를 확인하고 있습니다…</p></main>
   }
 
-  return authenticated ? <Outlet /> : <Navigate to="/login" replace />
+  if (!session.authenticated) return <Navigate to="/login" replace />
+  if (onboarding === 'required' && !session.onboardingCompleted) {
+    return <Navigate to="/onboarding" replace />
+  }
+  if (onboarding === 'incomplete' && session.onboardingCompleted) {
+    return <Navigate to="/" replace />
+  }
+
+  return <Outlet />
 }

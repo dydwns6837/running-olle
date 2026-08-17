@@ -33,8 +33,8 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public void validateActiveUser(UUID userId) {
-        getActiveUser(userId);
+    public boolean isOnboardingCompleted(UUID userId) {
+        return Boolean.TRUE.equals(getActiveUser(userId).getOnboardingCompleted());
     }
 
     @Transactional

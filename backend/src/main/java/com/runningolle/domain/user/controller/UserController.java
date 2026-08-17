@@ -1,5 +1,6 @@
 package com.runningolle.domain.user.controller;
 
+import com.runningolle.domain.user.dto.CurrentUserResponse;
 import com.runningolle.domain.user.dto.OnboardingRequest;
 import com.runningolle.domain.user.service.UserService;
 import jakarta.validation.Valid;
@@ -29,9 +30,11 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Void> validateCurrentUser(Authentication authentication) {
-        userService.validateActiveUser(UUID.fromString(authentication.getName()));
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<CurrentUserResponse> getCurrentUser(Authentication authentication) {
+        boolean onboardingCompleted = userService.isOnboardingCompleted(
+                UUID.fromString(authentication.getName())
+        );
+        return ResponseEntity.ok(new CurrentUserResponse(onboardingCompleted));
     }
 
     @PostMapping("/me/onboarding")

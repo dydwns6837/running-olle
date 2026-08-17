@@ -16,8 +16,11 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
-      <Route element={<RequireAuth />}>
+      <Route element={<RequireAuth onboarding="incomplete" />}>
         <Route path="/onboarding" element={<OnboardingPage />} />
+      </Route>
+
+      <Route element={<RequireAuth onboarding="required" />}>
         <Route element={<AppLayout leftSlot={<span>📍 {user.location}</span>} />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/courses" element={<CoursesPage />} />

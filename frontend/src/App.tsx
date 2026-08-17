@@ -9,6 +9,10 @@ import { CommunityPage } from './pages/Community/CommunityPage'
 import { CoursesPage } from './pages/Courses/CoursesPage'
 import { HomePage } from './pages/Home/HomePage'
 import { MyPage } from './pages/MyPage/MyPage'
+import { FreeRunReadyPage } from './pages/Running/FreeRunReadyPage'
+import { LiveRunningPage } from './pages/Running/LiveRunningPage'
+import { RunningCompletePage } from './pages/Running/RunningCompletePage'
+import { RunningSelectPage } from './pages/Running/RunningSelectPage'
 
 export default function App() {
   return (
@@ -26,7 +30,11 @@ export default function App() {
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/running" element={<RunningSelectPage />} />
         </Route>
+        <Route path="/running/free" element={<FreeRunReadyPage />} />
+        <Route path="/running/live" element={<LiveRunningPage />} />
+        <Route path="/running/complete" element={<RunningCompletePage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

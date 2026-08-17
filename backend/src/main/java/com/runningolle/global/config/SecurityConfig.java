@@ -49,8 +49,8 @@ public class SecurityConfig {
                                 "/error",
                                 "/favicon.ico",
                                 "/h2-console/**",
-                                "/login/**",
-                                "/oauth2/**",
+                                "/api/login/**",
+                                "/api/oauth2/**",
                                 "/actuator/health"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
@@ -58,6 +58,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(authorization -> authorization.baseUri("/api/oauth2/authorization"))
+                        .redirectionEndpoint(redirection -> redirection.baseUri("/api/login/oauth2/code/*"))
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                         .failureHandler(oAuth2AuthenticationFailureHandler)

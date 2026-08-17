@@ -59,7 +59,7 @@ export function OnboardingPage() {
     setNicknameStatus('checking')
     const timer = window.setTimeout(async () => {
       try {
-        const { data } = await axiosInstance.get('/api/users/nickname-availability', { params: { nickname: form.nickname.trim() } })
+        const { data } = await axiosInstance.get('/users/nickname-availability', { params: { nickname: form.nickname.trim() } })
         setNicknameStatus(data.available ? 'available' : 'taken')
       } catch {
         setNicknameStatus('idle')
@@ -110,7 +110,7 @@ export function OnboardingPage() {
 
     setSubmitting(true)
     try {
-      await axiosInstance.post('/api/users/me/onboarding', form)
+      await axiosInstance.post('/users/me/onboarding', form)
       navigate('/', { replace: true })
     } catch (requestError: unknown) {
       const message = isApiError(requestError)

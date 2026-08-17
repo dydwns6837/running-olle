@@ -31,7 +31,7 @@ export function RequireAuth({ onboarding = 'none' }: { onboarding?: OnboardingRe
     let active = true
     setSession(null)
 
-    axiosInstance.get<CurrentUserResponse>('/api/users/me')
+    axiosInstance.get<CurrentUserResponse>('/users/me')
       .then(({ data }) => {
         if (active) {
           setSession({

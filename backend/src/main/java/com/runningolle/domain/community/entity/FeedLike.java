@@ -47,4 +47,11 @@ public class FeedLike extends BaseCreatedAtEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "feed_post_id", nullable = false)
     private FeedPost feedPost;
+
+    public static FeedLike create(User user, FeedPost feedPost) {
+        FeedLike feedLike = new FeedLike();
+        feedLike.user = user;
+        feedLike.feedPost = feedPost;
+        return feedLike;
+    }
 }

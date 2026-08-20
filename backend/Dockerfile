@@ -4,7 +4,9 @@ WORKDIR /app
 
 COPY gradle gradle
 COPY gradlew build.gradle settings.gradle ./
-RUN chmod +x gradlew && ./gradlew dependencies --no-daemon
+RUN sed -i 's/\r$//' gradlew \
+    && chmod +x gradlew \
+    && ./gradlew dependencies --no-daemon
 
 COPY src src
 RUN ./gradlew bootJar --no-daemon
@@ -14,7 +16,7 @@ FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
 RUN groupadd --system spring && useradd --system --gid spring spring
-COPY --from=builder --chown=spring:spring /app/build/libs/running-olle-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=builder --chown=spring:spring /app/build/libs/app.jar app.jar
 
 USER spring
 EXPOSE 8080

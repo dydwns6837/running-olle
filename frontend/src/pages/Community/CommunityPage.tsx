@@ -15,9 +15,9 @@ const tabs: Array<{ key: CommunityTab; label: string }> = [
 
 const filters: Array<{ key: FeedFilter; label: string }> = [
   { key: 'all', label: '전체' },
-  { key: 'running', label: '러닝코스' },
-  { key: 'spot', label: '스팟코스' },
-  { key: 'photo', label: '포토' },
+  { key: 'running', label: '🏃 러닝코스' },
+  { key: 'spot', label: '🌊 스팟코스' },
+  { key: 'photo', label: '📸 포토' },
 ]
 
 export function CommunityPage() {
@@ -37,13 +37,19 @@ export function CommunityPage() {
 
     getFeed()
       .then((data) => {
-        if (active) setPosts(data)
+        if (active) {
+          setPosts(data)
+        }
       })
       .catch(() => {
-        if (active) setError('피드를 불러오지 못했습니다.')
+        if (active) {
+          setError('피드를 불러오지 못했습니다.')
+        }
       })
       .finally(() => {
-        if (active) setLoading(false)
+        if (active) {
+          setLoading(false)
+        }
       })
 
     return () => {
@@ -75,9 +81,12 @@ export function CommunityPage() {
   const upsertPost = (post: FeedPost) => {
     setPosts((current) => {
       const exists = current.some((item) => item.id === post.id)
-      if (!exists) return [post, ...current]
+      if (!exists) {
+        return [post, ...current]
+      }
       return current.map((item) => (item.id === post.id ? post : item))
     })
+
     setComposerOpen(false)
     setEditingPost(null)
     setDetailPost(post)
@@ -86,32 +95,31 @@ export function CommunityPage() {
 
   return (
     <>
-      <section className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[20px] font-black leading-tight text-[#261912]">커뮤니티</h1>
-          <p className="mt-1 text-[12px] text-[#594136]">최근 7일, 제주에서 남긴 러닝 기록과 여행 피드</p>
-        </div>
+      <section className="flex items-start justify-between">
+        <h1 className="text-[20px] font-black leading-[28px] text-[#261912]">커뮤니티</h1>
         <button
           type="button"
           onClick={() => {
             setEditingPost(null)
             setComposerOpen(true)
           }}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#FF6F0F_0%,#FD934C_100%)] text-[18px] text-white shadow-[0px_4px_12px_rgba(0,0,0,0.08)]"
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#FF6F0F] text-[16px] text-white shadow-[0px_4px_12px_rgba(0,0,0,0.08)]"
           aria-label="피드 작성"
         >
-          +
+          ✏️
         </button>
       </section>
 
-      <div className="mt-5 grid grid-cols-3 rounded-full bg-[#F7DDD3] p-1">
+      <div className="mt-4 flex gap-[22px] border-b border-[#E1BFB1]">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`rounded-full px-3 py-2 text-[13px] font-bold ${
-              activeTab === tab.key ? 'bg-white text-[#A04100]' : 'text-[#594136]'
+            className={`border-b-[2.5px] pb-3 text-[14px] font-bold ${
+              activeTab === tab.key
+                ? 'border-[#FF6F0F] text-[#261912]'
+                : 'border-transparent text-[#8D7164]'
             }`}
           >
             {tab.label}
@@ -121,16 +129,16 @@ export function CommunityPage() {
 
       {activeTab === 'feed' ? (
         <>
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {filters.map((filter) => (
               <button
                 key={filter.key}
                 type="button"
                 onClick={() => setActiveFilter(filter.key)}
-                className={`shrink-0 rounded-full px-4 py-2 text-[12px] font-bold ${
+                className={`shrink-0 rounded-full border px-4 py-2 text-[12px] font-bold ${
                   activeFilter === filter.key
-                    ? 'bg-[#FFF1EA] text-[#A04100]'
-                    : 'bg-white text-[#594136] shadow-[0px_4px_12px_rgba(0,0,0,0.05)]'
+                    ? 'border-[#FF6F0F] bg-[#FF6F0F] text-white'
+                    : 'border-[#E1BFB1] bg-white text-[#594136]'
                 }`}
               >
                 {filter.label}
@@ -138,14 +146,16 @@ export function CommunityPage() {
             ))}
           </div>
 
-          <div className="mt-4 rounded-[12px] border border-[#FFE4CC] bg-[#FFF5EE] px-4 py-3 text-[12px] font-bold text-[#A04100]">
-            최근 7일 · 제주 지역 러너들의 피드만 노출됩니다.
+          <div className="mt-3 rounded-[12px] border border-[#FFE4CC] bg-[#FFF5EE] px-4 py-2.5 text-[12px] font-bold text-[#A04100]">
+            🕐 최근 7일 · 제주 지역 러너들의 실시간 기록
           </div>
 
-          <div className="mt-4 flex flex-col gap-4">
+          <div className="mt-4 flex flex-col gap-2">
             {loading ? <FeedStateBox message="피드를 불러오는 중입니다." /> : null}
             {!loading && error ? <FeedStateBox message={error} tone="error" /> : null}
-            {!loading && !error && filteredPosts.length === 0 ? <FeedStateBox message="조건에 맞는 피드가 없습니다." /> : null}
+            {!loading && !error && filteredPosts.length === 0 ? (
+              <FeedStateBox message="조건에 맞는 피드가 없습니다." />
+            ) : null}
             {!loading && !error
               ? filteredPosts.map((post) => (
                   <FeedPostCard
@@ -168,7 +178,8 @@ export function CommunityPage() {
             {activeTab === 'meetup' ? '번개 기능은 다음 단계에서 붙입니다.' : '채팅 기능은 번개 다음 단계에서 붙입니다.'}
           </div>
           <p className="mt-2 text-[13px] leading-6 text-[#594136]">
-            이번 작업에서는 피드 기능을 우선 완성도 있게 다듬고 있습니다. 다음 단계에서 번개와 채팅을 같은 화면 흐름으로 확장하면 됩니다.
+            이번 단계에서는 피드 경험을 먼저 정리했습니다. 번개와 채팅은 같은 화면 구조를
+            유지하면서 이어서 확장하면 됩니다.
           </p>
         </div>
       )}
@@ -189,6 +200,12 @@ export function CommunityPage() {
           feedPostId={detailPost.id}
           initialPost={detailPost}
           onClose={() => setDetailPost(null)}
+          onChange={(nextPost) => updatePost(detailPost.id, nextPost)}
+          onEdit={(target) => {
+            setDetailPost(null)
+            setEditingPost(target)
+            setComposerOpen(true)
+          }}
         />
       ) : null}
     </>
@@ -199,7 +216,9 @@ function FeedStateBox({ message, tone = 'normal' }: { message: string; tone?: 'n
   return (
     <div
       className={`rounded-[16px] px-4 py-5 text-[13px] font-bold ${
-        tone === 'error' ? 'bg-[#FFF1EE] text-[#B91C1C]' : 'bg-white text-[#594136] shadow-[0px_4px_12px_rgba(0,0,0,0.05)]'
+        tone === 'error'
+          ? 'bg-[#FFF1EE] text-[#B91C1C]'
+          : 'bg-white text-[#594136] shadow-[0px_4px_12px_rgba(0,0,0,0.05)]'
       }`}
     >
       {message}

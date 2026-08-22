@@ -61,7 +61,9 @@ export function FeedComposer({ editingPost, onCancel, onCreated }: FeedComposerP
   }, [])
 
   const openFilePicker = () => {
-    if (remainingCount <= 0 || uploadingImages) return
+    if (remainingCount <= 0 || uploadingImages) {
+      return
+    }
     fileInputRef.current?.click()
   }
 
@@ -95,7 +97,7 @@ export function FeedComposer({ editingPost, onCancel, onCreated }: FeedComposerP
 
   const submit = async () => {
     if (!content.trim()) {
-      setError('내용을 입력해 주세요.')
+      setError('내용을 입력하세요.')
       return
     }
 
@@ -113,13 +115,14 @@ export function FeedComposer({ editingPost, onCancel, onCreated }: FeedComposerP
         imageUrls: selectedImages,
       }
 
-      const post = isEditMode && editingPost
-        ? await updateFeedPost(editingPost.id, payload)
-        : await createFeedPost(payload)
+      const post =
+        isEditMode && editingPost
+          ? await updateFeedPost(editingPost.id, payload)
+          : await createFeedPost(payload)
 
       onCreated(post)
     } catch {
-      setError(isEditMode ? '게시글을 수정하지 못했습니다.' : '게시글을 저장하지 못했습니다.')
+      setError(isEditMode ? '게시글을 수정하지 못했습니다.' : '게시글을 등록하지 못했습니다.')
     } finally {
       setSubmitting(false)
     }
@@ -129,17 +132,23 @@ export function FeedComposer({ editingPost, onCancel, onCreated }: FeedComposerP
     <div className="fixed inset-0 z-40 bg-[rgba(38,25,18,0.45)]">
       <div className="mx-auto flex h-dvh max-w-[430px] flex-col bg-[#FFF8F6]">
         <div className="flex items-center justify-between border-b border-[#E1BFB1] bg-[#FFF8F6] px-5 py-4">
-          <button type="button" onClick={onCancel} className="rounded-full border border-[#E1BFB1] px-4 py-2 text-[13px] font-bold text-[#594136]">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-full border border-[#E1BFB1] px-4 py-2 text-[13px] font-bold text-[#594136]"
+          >
             취소
           </button>
-          <strong className="text-[16px] font-bold text-[#261912]">{isEditMode ? '게시글 수정' : '게시글 작성'}</strong>
+          <strong className="text-[16px] font-bold text-[#261912]">
+            {isEditMode ? '게시글 수정' : '피드 작성'}
+          </strong>
           <button
             type="button"
             onClick={submit}
             disabled={submitting || uploadingImages}
             className="rounded-full bg-[linear-gradient(135deg,#FF6F0F_0%,#FD934C_100%)] px-4 py-2 text-[13px] font-bold text-white disabled:opacity-50"
           >
-            {submitting ? (isEditMode ? '수정 중' : '게시 중') : (isEditMode ? '수정' : '게시')}
+            {submitting ? (isEditMode ? '수정 중' : '등록 중') : isEditMode ? '수정' : '등록'}
           </button>
         </div>
 
@@ -147,7 +156,7 @@ export function FeedComposer({ editingPost, onCancel, onCreated }: FeedComposerP
           <div className="grid gap-4">
             <OptionSection
               title="러닝 기록 선택"
-              helper="실제 러닝 기록을 연결하면 거리와 시간이 같이 노출됩니다."
+              helper="실제 러닝 기록을 연결하면 거리와 시간이 함께 노출됩니다."
               loading={loadingOptions}
               options={runningRecordOptions}
               selectedId={selectedRunningRecordId}
@@ -158,7 +167,7 @@ export function FeedComposer({ editingPost, onCancel, onCreated }: FeedComposerP
 
             <OptionSection
               title="코스 태그 선택"
-              helper="공개 코스 중 최근 등록된 코스를 태그할 수 있습니다."
+              helper="공개 코스 중 최근 등록된 코스를 피드에 연결할 수 있습니다."
               loading={loadingOptions}
               options={courseOptions}
               selectedId={selectedCourseId}
@@ -172,7 +181,7 @@ export function FeedComposer({ editingPost, onCancel, onCreated }: FeedComposerP
             <textarea
               value={content}
               onChange={(event) => setContent(event.target.value)}
-              placeholder="오늘 달린 이야기나 제주에서의 순간을 남겨보세요."
+              placeholder="오늘 달린 기록이나 제주에서의 러닝 경험을 남겨보세요."
               className="min-h-[150px] w-full rounded-[12px] border border-[#E1BFB1] bg-white px-4 py-3 text-[14px] leading-6 text-[#261912] outline-none"
             />
           </div>
@@ -209,7 +218,9 @@ export function FeedComposer({ editingPost, onCancel, onCreated }: FeedComposerP
                   style={{ backgroundImage: `url(${imageUrl})` }}
                   aria-label="이미지 제거"
                 >
-                  <span className="absolute right-1 top-1 rounded-full bg-[rgba(38,25,18,0.7)] px-1.5 text-[10px] text-white">x</span>
+                  <span className="absolute right-1 top-1 rounded-full bg-[rgba(38,25,18,0.7)] px-1.5 text-[10px] text-white">
+                    x
+                  </span>
                 </button>
               ))}
             </div>
@@ -229,7 +240,9 @@ export function FeedComposer({ editingPost, onCancel, onCreated }: FeedComposerP
           >
             <div>
               <div className="text-[13px] font-bold text-[#261912]">포토 태그</div>
-              <div className="mt-1 text-[11px] text-[#594136]">사진 중심 피드 필터에 노출됩니다.</div>
+              <div className="mt-1 text-[11px] text-[#594136]">
+                사진 중심 피드 필터에서 함께 노출됩니다.
+              </div>
             </div>
             <span className="text-[12px] font-bold text-[#A04100]">{photoTagged ? 'ON' : 'OFF'}</span>
           </button>
@@ -244,13 +257,16 @@ export function FeedComposer({ editingPost, onCancel, onCreated }: FeedComposerP
               ) : null}
               {selectedCourse ? (
                 <div className={selectedRunningRecord ? 'mt-2' : ''}>
-                  코스 태그: {selectedCourse.label} · {selectedCourse.courseType === 'RUNNING_COURSE' ? '러닝코스' : '스팟코스'}
+                  코스 태그: {selectedCourse.label} ·{' '}
+                  {selectedCourse.courseType === 'RUNNING_COURSE' ? '러닝코스' : '스팟코스'}
                 </div>
               ) : null}
             </div>
           ) : null}
 
-          {error ? <p className="mt-4 rounded-[12px] bg-[#FFF1EE] px-4 py-3 text-[12px] text-[#B91C1C]">{error}</p> : null}
+          {error ? (
+            <p className="mt-4 rounded-[12px] bg-[#FFF1EE] px-4 py-3 text-[12px] text-[#B91C1C]">{error}</p>
+          ) : null}
         </div>
       </div>
     </div>

@@ -1,5 +1,18 @@
 import { useMemo, useState } from 'react'
-import { createFeedComment, deleteFeedComment, deleteFeedPost, toggleFeedLike, type FeedPost } from './api'
+import type { FeedPost } from './api'
+import {
+  createCommentWithPost,
+  deleteCommentWithPost,
+  deletePostById,
+  toggleLikeWithOptimistic,
+} from './feedPostMutations'
+import {
+  buildAvatarGradient,
+  buildImageGridClass,
+  formatDuration,
+  formatPace,
+  formatRelativeTime,
+} from './feedUi'
 
 type FeedPostCardProps = {
   post: FeedPost
@@ -17,36 +30,26 @@ export function FeedPostCard({ post, onChange, onEdit, onOpenDetail }: FeedPostC
 
   const handleLike = async () => {
     const current = { ...post }
-    const likedByMe = !current.likedByMe
-    onChange({
-      ...current,
-      likedByMe,
-      likeCount: current.likeCount + (likedByMe ? 1 : -1),
-    })
 
     try {
-      const result = await toggleFeedLike(post.id)
-      onChange({
-        ...current,
-        likedByMe: result.liked,
-        likeCount: result.likeCount,
-      })
+      const { optimistic, confirmed } = await toggleLikeWithOptimistic(current)
+      onChange(optimistic)
+      onChange(confirmed)
     } catch {
       onChange(current)
     }
   }
 
   const handleCommentSubmit = async () => {
-    if (!comment.trim() || pending) return
+    if (!comment.trim() || pending) {
+      return
+    }
+
     setPending(true)
 
     try {
-      const nextComment = await createFeedComment(post.id, comment.trim())
-      onChange({
-        ...post,
-        commentCount: post.commentCount + 1,
-        comments: [...post.comments, nextComment],
-      })
+      const nextPost = await createCommentWithPost(post, comment.trim())
+      onChange(nextPost)
       setComment('')
       setShowAllComments(true)
     } finally {
@@ -55,25 +58,30 @@ export function FeedPostCard({ post, onChange, onEdit, onOpenDetail }: FeedPostC
   }
 
   const handleDeleteComment = async (commentId: string) => {
-    const nextComments = post.comments.filter((item) => item.id !== commentId)
-    onChange({
+    const current = { ...post }
+    const optimistic = {
       ...post,
       commentCount: Math.max(0, post.commentCount - 1),
-      comments: nextComments,
-    })
+      comments: post.comments.filter((item) => item.id !== commentId),
+    }
+
+    onChange(optimistic)
 
     try {
-      await deleteFeedComment(commentId)
+      const nextPost = await deleteCommentWithPost(current, commentId)
+      onChange(nextPost)
     } catch {
-      onChange(post)
+      onChange(current)
     }
   }
 
   const handleDeletePost = async () => {
-    if (!window.confirm('이 게시글을 삭제할까요?')) return
+    if (!window.confirm('이 게시글을 삭제할까요?')) {
+      return
+    }
 
     try {
-      await deleteFeedPost(post.id)
+      await deletePostById(post.id)
       onChange(null)
     } catch {
       window.alert('게시글을 삭제하지 못했습니다.')
@@ -81,92 +89,147 @@ export function FeedPostCard({ post, onChange, onEdit, onOpenDetail }: FeedPostC
   }
 
   return (
-    <article className="rounded-[16px] bg-white p-4 shadow-[0px_4px_12px_rgba(0,0,0,0.05)]">
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#FF6F0F_0%,#FD934C_100%)] text-[14px] font-bold text-white">
+    <article className="rounded-[18px] bg-white px-5 py-4 shadow-[0px_2px_12px_rgba(0,0,0,0.06)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <div
+            className="flex h-[38px] w-[38px] items-center justify-center rounded-full text-[14px] font-bold text-white"
+            style={{ backgroundImage: buildAvatarGradient(post) }}
+          >
             {post.nickname.slice(0, 1)}
           </div>
-          <div>
-            <div className="text-[14px] font-bold text-[#261912]">{post.nickname}</div>
-            <div className="mt-1 text-[11px] text-[#594136]">
+          <div className="min-w-0">
+            <div className="truncate text-[14px] font-bold text-[#261912]">{post.nickname}</div>
+            <div className="mt-0.5 text-[11px] text-[#8D7164]">
               {createdLabel} · {post.region}
             </div>
           </div>
         </div>
+
         {post.mine ? (
-          <div className="flex gap-2">
-            <button type="button" onClick={() => onEdit(post)} className="text-[12px] font-bold text-[#8D7164]">
+          <div className="flex items-center gap-3 text-[12px] font-bold text-[#8D7164]">
+            <button type="button" onClick={() => onEdit(post)}>
               수정
             </button>
-            <button type="button" onClick={handleDeletePost} className="text-[12px] font-bold text-[#8D7164]">
+            <button type="button" onClick={handleDeletePost}>
               삭제
             </button>
           </div>
-        ) : null}
+        ) : (
+          <span className="text-[18px] leading-none text-[#C8A99A]">···</span>
+        )}
       </div>
 
       {post.runningRecord ? (
-        <div className="mt-4 rounded-[12px] bg-[#FFF1EA] p-3">
-          <div className="text-[13px] font-bold text-[#261912]">{post.course?.name ?? '러닝 기록'}</div>
-          <div className="mt-1 text-[11px] text-[#594136]">
-            {post.runningRecord.distanceKm.toFixed(1)}km · {formatDuration(post.runningRecord.durationSeconds)}
+        <button
+          type="button"
+          onClick={() => onOpenDetail(post)}
+          className={`mt-4 flex w-full items-center gap-3 rounded-[12px] px-3 py-3 text-left ${
+            post.course?.courseType === 'SPOT_COURSE' ? 'bg-[#F0FDF4]' : 'bg-[#FFF5EE]'
+          }`}
+        >
+          <div
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] text-[16px]"
+            style={{
+              background: post.course?.courseType === 'SPOT_COURSE' ? '#34C759' : '#FF6F0F',
+            }}
+          >
+            {post.course?.courseType === 'SPOT_COURSE' ? '🌊' : '🏃'}
           </div>
-        </div>
+          <div className="min-w-0">
+            <div className="truncate text-[13px] font-bold text-[#261912]">
+              {post.course?.name ?? '러닝 기록'}
+            </div>
+            <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#594136]">
+              <span>📏 {post.runningRecord.distanceKm.toFixed(2)}km</span>
+              <span>⏱ {formatDuration(post.runningRecord.durationSeconds)}</span>
+              <span>{formatPace(post.runningRecord.distanceKm, post.runningRecord.durationSeconds)}</span>
+            </div>
+          </div>
+        </button>
       ) : null}
 
       <button type="button" onClick={() => onOpenDetail(post)} className="mt-4 block w-full text-left">
-        <p className="whitespace-pre-wrap text-[14px] leading-6 text-[#261912]">{post.content}</p>
+        <p className="whitespace-pre-wrap text-[14px] leading-[1.65] text-[#261912]">{post.content}</p>
       </button>
 
       {post.imageUrls.length > 0 ? (
-        <button type="button" onClick={() => onOpenDetail(post)} className="mt-4 block w-full">
-          <div className="grid grid-cols-3 gap-1 overflow-hidden rounded-[12px]">
-            {post.imageUrls.slice(0, 3).map((imageUrl) => (
-              <div key={imageUrl} className="aspect-square bg-cover bg-center" style={{ backgroundImage: `url(${imageUrl})` }} />
+        <button type="button" onClick={() => onOpenDetail(post)} className="mt-3 block w-full">
+          <div className={`grid gap-[3px] overflow-hidden rounded-[12px] ${buildImageGridClass(post.imageUrls.length)}`}>
+            {post.imageUrls.slice(0, 3).map((imageUrl, index) => (
+              <div
+                key={`${imageUrl}-${index}`}
+                className={`relative bg-cover bg-center ${post.imageUrls.length === 1 ? 'aspect-[4/3]' : 'aspect-square'}`}
+                style={{ backgroundImage: `url(${imageUrl})` }}
+              >
+                {index === 2 && post.imageUrls.length > 3 ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[rgba(38,25,18,0.38)] text-[18px] font-bold text-white">
+                    +{post.imageUrls.length - 3}
+                  </div>
+                ) : null}
+              </div>
             ))}
           </div>
         </button>
       ) : null}
 
-      <div className="mt-4 flex items-center gap-3 text-[12px] font-bold text-[#594136]">
-        <button type="button" onClick={handleLike} className={post.likedByMe ? 'text-[#A04100]' : ''}>
-          좋아요 {post.likeCount}
+      <div className="mt-3 flex items-center gap-4 border-t border-[#F5E7E1] pt-3 text-[13px] font-medium text-[#8D7164]">
+        <button
+          type="button"
+          onClick={handleLike}
+          className={`flex items-center gap-1 ${post.likedByMe ? 'text-[#FF3B30]' : ''}`}
+        >
+          <span>{post.likedByMe ? '❤️' : '🤍'}</span>
+          <span>{post.likeCount}</span>
         </button>
-        <span>댓글 {post.commentCount}</span>
+        <button type="button" onClick={() => onOpenDetail(post)} className="flex items-center gap-1">
+          <span>💬</span>
+          <span>{post.commentCount}</span>
+        </button>
         {post.course ? (
-          <span className="ml-auto text-[#A04100]">
-            {post.course.courseType === 'RUNNING_COURSE' ? '러닝코스' : '스팟코스'} · {post.course.name}
-          </span>
-        ) : null}
-      </div>
-
-      <div className="mt-4 space-y-2">
-        {visibleComments.map((item) => (
-          <div key={item.id} className="rounded-[12px] bg-[#FFF8F6] px-3 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="text-[12px] font-bold text-[#261912]">{item.nickname}</div>
-              {item.mine ? (
-                <button type="button" onClick={() => handleDeleteComment(item.id)} className="text-[10px] font-bold text-[#8D7164]">
-                  삭제
-                </button>
-              ) : null}
-            </div>
-            <div className="mt-1 text-[12px] leading-5 text-[#594136]">{item.content}</div>
-          </div>
-        ))}
-        {post.comments.length > 2 ? (
-          <button type="button" onClick={() => setShowAllComments((prev) => !prev)} className="text-[12px] font-bold text-[#A04100]">
-            {showAllComments ? '댓글 접기' : `댓글 ${post.comments.length - 2}개 더보기`}
+          <button type="button" onClick={() => onOpenDetail(post)} className="ml-auto text-[12px] font-bold text-[#FF6F0F]">
+            🔗 이 코스 보기
           </button>
         ) : null}
       </div>
+
+      {post.comments.length > 0 ? (
+        <div className="mt-4 space-y-2">
+          {visibleComments.map((item) => (
+            <div key={item.id} className="rounded-[12px] bg-[#FFF8F6] px-3 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-[12px] font-bold text-[#261912]">{item.nickname}</div>
+                {item.mine ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteComment(item.id)}
+                    className="text-[10px] font-bold text-[#8D7164]"
+                  >
+                    삭제
+                  </button>
+                ) : null}
+              </div>
+              <div className="mt-1 text-[12px] leading-5 text-[#594136]">{item.content}</div>
+            </div>
+          ))}
+
+          {post.comments.length > 2 ? (
+            <button
+              type="button"
+              onClick={() => setShowAllComments((prev) => !prev)}
+              className="text-[12px] font-bold text-[#A04100]"
+            >
+              {showAllComments ? '댓글 접기' : `댓글 ${post.comments.length - 2}개 더보기`}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="mt-4 flex gap-2">
         <input
           value={comment}
           onChange={(event) => setComment(event.target.value)}
-          placeholder="댓글을 입력하세요."
+          placeholder="댓글을 입력하세요"
           className="h-11 flex-1 rounded-full border border-[#E1BFB1] bg-[#FFF8F6] px-4 text-[13px] text-[#261912] outline-none"
         />
         <button
@@ -180,21 +243,4 @@ export function FeedPostCard({ post, onChange, onEdit, onOpenDetail }: FeedPostC
       </div>
     </article>
   )
-}
-
-function formatDuration(seconds: number) {
-  const minutes = Math.floor(seconds / 60)
-  const remainSeconds = seconds % 60
-  return `${minutes}:${String(remainSeconds).padStart(2, '0')}`
-}
-
-function formatRelativeTime(value: string) {
-  const date = new Date(value)
-  const diffMs = Date.now() - date.getTime()
-  const diffMinutes = Math.max(1, Math.floor(diffMs / 60000))
-
-  if (diffMinutes < 60) return `${diffMinutes}분 전`
-  const diffHours = Math.floor(diffMinutes / 60)
-  if (diffHours < 24) return `${diffHours}시간 전`
-  return `${Math.floor(diffHours / 24)}일 전`
 }

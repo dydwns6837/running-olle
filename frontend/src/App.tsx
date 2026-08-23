@@ -6,6 +6,7 @@ import { LoginPage } from './pages/Auth/LoginPage'
 import { OAuthCallbackPage } from './pages/Auth/OAuthCallbackPage'
 import { OnboardingPage } from './pages/Auth/OnboardingPage'
 import { CommunityPage } from './pages/Community/CommunityPage'
+import { CourseBuilderPage } from './pages/Courses/CourseBuilderPage'
 import { CoursesPage } from './pages/Courses/CoursesPage'
 import { HomePage } from './pages/Home/HomePage'
 import { AccountPage, BookmarksPage, CompletedRunsPage, MyPage, NotificationPage, ProfileEditPage, ReportsPage, RunningHistoryPage, SettingsPage, TripCreatePage, TripsPage } from './pages/MyPage/MyPage'
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/mypage/settings/notifications" element={<NotificationPage />} />
           <Route path="/running" element={<RunningSelectPage />} />
         </Route>
+        <Route path="/courses/create" element={<CourseBuilderPage />} />
         <Route path="/running/free" element={<FreeRunReadyPage />} />
         <Route path="/running/live" element={<LiveRunningPage />} />
         <Route path="/running/complete" element={<RunningCompletePage />} />

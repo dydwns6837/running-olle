@@ -19,11 +19,3 @@ export type SavedRunningRecord = {
   route: GeoPoint[]
   syncStatus: 'synced' | 'pending'
 }
-
-declare global {
-  interface Window {
-    kakao?: {
-      maps: any
-    }
-  }
-}

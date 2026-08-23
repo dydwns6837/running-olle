@@ -1,24 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
+import { getKakaoMapAppKey, loadKakaoMapSdk } from '../map/kakaoMaps'
+import type { KakaoCircle, KakaoCustomOverlay, KakaoMap, KakaoPolyline } from '../map/kakaoMaps'
 import { JEJU_FALLBACK_POSITION } from './runningUtils'
 import type { GeoPoint } from './types'
-
-let kakaoMapLoader: Promise<void> | null = null
-
-function loadKakaoMapSdk(appKey: string) {
-  if (window.kakao?.maps) return Promise.resolve()
-  if (kakaoMapLoader) return kakaoMapLoader
-  kakaoMapLoader = new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`
-    script.async = true
-    script.onload = () => window.kakao?.maps
-      ? window.kakao.maps.load(resolve)
-      : reject(new Error('카카오맵 SDK를 불러오지 못했어요.'))
-    script.onerror = () => reject(new Error('카카오맵 연결에 실패했어요.'))
-    document.head.appendChild(script)
-  })
-  return kakaoMapLoader
-}
 
 type Props = {
   currentPosition: GeoPoint | null
@@ -29,13 +13,13 @@ type Props = {
 
 export function FreeRunningMap({ currentPosition, recordedPath = [], followPosition = true, className = '' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
-  const mapRef = useRef<any>(null)
-  const markerRef = useRef<any>(null)
-  const accuracyRef = useRef<any>(null)
-  const routeRef = useRef<any>(null)
+  const mapRef = useRef<KakaoMap | null>(null)
+  const markerRef = useRef<KakaoCustomOverlay | null>(null)
+  const accuracyRef = useRef<KakaoCircle | null>(null)
+  const routeRef = useRef<KakaoPolyline | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
-  const appKey = import.meta.env.VITE_KAKAO_MAP_APP_KEY || import.meta.env.VITE_MAP_API_KEY
+  const appKey = getKakaoMapAppKey()
 
   useEffect(() => {
     if (!containerRef.current || !appKey) return
@@ -88,8 +72,11 @@ export function FreeRunningMap({ currentPosition, recordedPath = [], followPosit
       })
     } else {
       markerRef.current.setPosition(position)
-      accuracyRef.current.setPosition(position)
-      accuracyRef.current.setRadius(currentPosition.accuracy ?? 0)
+      const accuracy = accuracyRef.current
+      if (accuracy) {
+        accuracy.setPosition(position)
+        accuracy.setRadius(currentPosition.accuracy ?? 0)
+      }
     }
     if (followPosition) mapRef.current.panTo(position)
   }, [currentPosition, followPosition, ready])

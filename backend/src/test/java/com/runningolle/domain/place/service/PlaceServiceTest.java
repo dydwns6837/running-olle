@@ -17,6 +17,7 @@ import com.runningolle.domain.tourism.repository.TourismPlaceRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,6 +52,8 @@ class PlaceServiceTest {
                         kakaoPlace("kakao-tour", "용두암", "AT4", "관광명소", 33.5161104, 126.5119574),
                         kakaoPlace("kakao-food", "제주식당", "FD6", "음식점", 33.5, 126.53)
                 ));
+        given(tourismPlaceRepository.searchNearbyOfficialTourismPlaces("제주", 33.4996213, 126.5311884, 5_000, 10))
+                .willReturn(List.of());
 
         var response = placeService.searchPlaces("제주", 33.4996213, 126.5311884, null);
 
@@ -58,6 +61,60 @@ class PlaceServiceTest {
         assertThat(response.get(0).isTourismCandidate()).isTrue();
         assertThat(response.get(1).isTourismCandidate()).isFalse();
         assertThat(response.get(0).address()).isEqualTo("제주로 1");
+    }
+
+    @Test
+    void includesOfficialTourismPlacesFromCacheInSearchResults() {
+        TourismPlace tourismPlace = tourismPlace("tour-saryeoni", "사려니숲길", 33.421530, 126.626488);
+        given(kakaoPlaceClient.searchKeyword("사려니", 33.421530, 126.626488, 5_000))
+                .willReturn(List.of());
+        given(tourismPlaceRepository.searchNearbyOfficialTourismPlaces("사려니", 33.421530, 126.626488, 5_000, 10))
+                .willReturn(List.of(tourismPlace));
+
+        var response = placeService.searchPlaces("사려니", 33.421530, 126.626488, null);
+
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).kakaoPlaceId()).isEqualTo("tourapi:tour-saryeoni");
+        assertThat(response.get(0).name()).isEqualTo("사려니숲길");
+        assertThat(response.get(0).categoryGroupCode()).isEqualTo("AT4");
+        assertThat(response.get(0).categoryName()).isEqualTo("관광지");
+        assertThat(response.get(0).isTourismCandidate()).isTrue();
+    }
+
+    @Test
+    void skipsOfficialTourismSearchResultWhenKakaoAlreadyHasSamePlace() {
+        KakaoPlace kakaoPlace = kakaoPlace("kakao-halla", "한라산", "AT4", "관광명소", 33.361667, 126.529167);
+        TourismPlace tourismPlace = tourismPlace("tour-halla", "한라산국립공원", 33.361667, 126.529167);
+        given(kakaoPlaceClient.searchKeyword("한라산", 33.361667, 126.529167, 5_000))
+                .willReturn(List.of(kakaoPlace));
+        given(tourismPlaceRepository.searchNearbyOfficialTourismPlaces("한라산", 33.361667, 126.529167, 5_000, 10))
+                .willReturn(List.of(tourismPlace));
+
+        var response = placeService.searchPlaces("한라산", 33.361667, 126.529167, null);
+
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).kakaoPlaceId()).isEqualTo("kakao-halla");
+    }
+
+    @Test
+    void returnsTourApiDetailDirectlyForOfficialTourismSearchResult() {
+        TourismPlace tourismPlace = tourismPlace("tour-halla", "한라산국립공원", 33.361667, 126.529167);
+        given(tourismPlaceRepository.findByContentId("tour-halla")).willReturn(Optional.of(tourismPlace));
+
+        var response = placeService.getPlaceDetail(
+                "tourapi:tour-halla",
+                "한라산국립공원",
+                33.361667,
+                126.529167,
+                "AT4"
+        );
+
+        assertThat(response.kakaoPlaceId()).isEqualTo("tourapi:tour-halla");
+        assertThat(response.tourApiMatched()).isTrue();
+        assertThat(response.tourContentId()).isEqualTo("tour-halla");
+        assertThat(response.name()).isEqualTo("한라산국립공원");
+        assertThat(response.categoryName()).isEqualTo("관광지");
+        verify(kakaoPlaceClient, never()).searchKeyword(anyString(), anyDouble(), anyDouble(), anyInt(), anyString());
     }
 
     @Test

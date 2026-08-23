@@ -22,12 +22,16 @@ import org.springframework.web.server.ResponseStatusException;
 public class PlaceService {
 
     private static final String TOURISM_CATEGORY_GROUP_CODE = "AT4";
+    private static final String TOUR_API_PLACE_ID_PREFIX = "tourapi:";
     private static final int DEFAULT_SEARCH_RADIUS_METERS = 5_000;
     private static final int MAX_SEARCH_RADIUS_METERS = 20_000;
     private static final int DETAIL_SEARCH_RADIUS_METERS = 1_000;
+    private static final int TOURISM_SEARCH_LIMIT = 10;
     private static final double TOURISM_MATCH_RADIUS_METERS = 500.0;
+    private static final double TOURISM_SEARCH_DEDUPLICATE_RADIUS_METERS = 250.0;
     private static final int TOURISM_MATCH_LIMIT = 20;
     private static final double MIN_TOURISM_NAME_SCORE = 0.55;
+    private static final double MIN_TOURISM_DUPLICATE_NAME_SCORE = 0.70;
     private static final double EARTH_RADIUS_METERS = 6_371_000.0;
 
     private final KakaoPlaceClient kakaoPlaceClient;
@@ -38,9 +42,22 @@ public class PlaceService {
         validateCoordinate(lat, lng);
         int radius = normalizeRadius(radiusMeters);
 
-        return kakaoPlaceClient.searchKeyword(keyword, lat, lng, radius).stream()
+        List<KakaoPlace> kakaoPlaces = kakaoPlaceClient.searchKeyword(keyword, lat, lng, radius);
+        List<PlaceSearchResultResponse> kakaoResults = kakaoPlaces.stream()
                 .map(place -> PlaceSearchResultResponse.from(place, isTourismCandidate(place.categoryGroupCode())))
                 .toList();
+        List<PlaceSearchResultResponse> officialTourismResults = tourismPlaceRepository.searchNearbyOfficialTourismPlaces(
+                        keyword.trim(),
+                        lat,
+                        lng,
+                        radius,
+                        TOURISM_SEARCH_LIMIT
+                ).stream()
+                .filter(place -> !hasDuplicateKakaoPlace(place, kakaoPlaces))
+                .map(PlaceSearchResultResponse::fromOfficialTourism)
+                .toList();
+
+        return concat(kakaoResults, officialTourismResults);
     }
 
     public PlaceDetailResponse getPlaceDetail(
@@ -56,6 +73,13 @@ public class PlaceService {
         validateKeyword(name);
         validateCoordinate(lat, lng);
 
+        if (isTourApiPlaceId(kakaoPlaceId)) {
+            return tourismPlaceRepository.findByContentId(tourContentId(kakaoPlaceId))
+                    .filter(place -> !Boolean.TRUE.equals(place.getIsDeleted()))
+                    .map(place -> tourApiOnlyDetail(kakaoPlaceId, place))
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "TourAPI 관광지 정보를 찾을 수 없습니다."));
+        }
+
         KakaoPlace kakaoPlace = resolveKakaoPlace(kakaoPlaceId, name, lat, lng, categoryGroupCode)
                 .map(place -> keepRequestedKakaoPlaceId(place, kakaoPlaceId))
                 .orElseGet(() -> fallbackKakaoPlace(kakaoPlaceId, name, lat, lng, categoryGroupCode));
@@ -69,6 +93,36 @@ public class PlaceService {
         }
 
         return kakaoOnlyDetail(kakaoPlace);
+    }
+
+    private static List<PlaceSearchResultResponse> concat(
+            List<PlaceSearchResultResponse> kakaoResults,
+            List<PlaceSearchResultResponse> officialTourismResults
+    ) {
+        return java.util.stream.Stream.concat(kakaoResults.stream(), officialTourismResults.stream()).toList();
+    }
+
+    private static boolean isTourApiPlaceId(String placeId) {
+        return placeId != null && placeId.startsWith(TOUR_API_PLACE_ID_PREFIX);
+    }
+
+    private static String tourContentId(String placeId) {
+        return placeId.substring(TOUR_API_PLACE_ID_PREFIX.length());
+    }
+
+    private static boolean hasDuplicateKakaoPlace(TourismPlace tourismPlace, List<KakaoPlace> kakaoPlaces) {
+        return kakaoPlaces.stream()
+                .anyMatch(kakaoPlace -> isLikelySamePlace(tourismPlace, kakaoPlace));
+    }
+
+    private static boolean isLikelySamePlace(TourismPlace tourismPlace, KakaoPlace kakaoPlace) {
+        if (kakaoPlace.lat() == null || kakaoPlace.lng() == null) {
+            return false;
+        }
+        double nameScore = normalizedNameScore(tourismPlace.getTitle(), kakaoPlace.name());
+        double distanceMeters = distanceMeters(kakaoPlace.lat(), kakaoPlace.lng(), tourismPlace.getLocation());
+        return nameScore >= MIN_TOURISM_DUPLICATE_NAME_SCORE
+                && distanceMeters <= TOURISM_SEARCH_DEDUPLICATE_RADIUS_METERS;
     }
 
     private Optional<KakaoPlace> resolveKakaoPlace(
@@ -151,6 +205,25 @@ public class PlaceService {
         );
     }
 
+    private static PlaceDetailResponse tourApiOnlyDetail(String kakaoPlaceId, TourismPlace tourismPlace) {
+        return new PlaceDetailResponse(
+                kakaoPlaceId,
+                tourismPlace.getTitle(),
+                officialTourismCategoryName(tourismPlace.getContentTypeId()),
+                tourismAddress(tourismPlace),
+                tourismPlace.getLocation().getY(),
+                tourismPlace.getLocation().getX(),
+                tourismPlace.getTel(),
+                true,
+                tourismPlace.getContentId(),
+                tourismPlace.getContentTypeId(),
+                tourismPlace.getOverview(),
+                tourismPlace.getFirstImageUrl(),
+                tourismPlace.getUseTime(),
+                nullIfMissing(tourismPlace.getRawData())
+        );
+    }
+
     private static PlaceDetailResponse kakaoOnlyDetail(KakaoPlace kakaoPlace) {
         return new PlaceDetailResponse(
                 kakaoPlace.kakaoPlaceId(),
@@ -219,6 +292,24 @@ public class PlaceService {
 
     private static String address(KakaoPlace kakaoPlace) {
         return firstNonBlank(kakaoPlace.roadAddress(), kakaoPlace.address());
+    }
+
+    private static String officialTourismCategoryName(String contentTypeId) {
+        return switch (contentTypeId) {
+            case "14" -> "문화시설";
+            case "28" -> "레포츠";
+            default -> "관광지";
+        };
+    }
+
+    private static String tourismAddress(TourismPlace place) {
+        if (!StringUtils.hasText(place.getAddress())) {
+            return place.getDetailAddress();
+        }
+        if (!StringUtils.hasText(place.getDetailAddress())) {
+            return place.getAddress();
+        }
+        return place.getAddress() + " " + place.getDetailAddress();
     }
 
     private static String firstNonBlank(String primary, String fallback) {

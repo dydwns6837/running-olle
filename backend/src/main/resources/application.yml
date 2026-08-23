@@ -51,6 +51,7 @@ tourism:
     content-type-ids: [ "12", "14", "28" ]
     page-size: 100
     scheduler-enabled: false
+    manual-sync-enabled: false
     cron: "0 0 4 * * *"
     zone: Asia/Seoul
 

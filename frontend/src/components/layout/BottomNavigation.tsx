@@ -1,4 +1,5 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
+import { RunningIcon } from '../../features/running/RunningIcon'
 
 type NavigationItem = {
   label: string
@@ -19,6 +20,7 @@ function getIsActive(currentPath: string, itemPath: string) {
 
 export function BottomNavigation() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 h-[83px] border-t border-[#E1BFB1] bg-white shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
@@ -43,10 +45,11 @@ export function BottomNavigation() {
 
         <button
           type="button"
-          className="-mt-8 mx-auto flex h-[62px] w-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#FF6F0F_0%,#FD934C_100%)] text-[34px] leading-none text-white drop-shadow-[0px_4px_6px_rgba(0,0,0,0.2)]"
-          aria-label="러닝 시작"
+          className={`-mt-8 mx-auto flex h-[62px] w-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#FF6F0F_0%,#FD934C_100%)] leading-none text-white drop-shadow-[0px_4px_6px_rgba(0,0,0,0.2)] ${pathname.startsWith('/running') ? 'ring-4 ring-[#FFE3D5]' : ''}`}
+          aria-label="러닝 방식 선택"
+          onClick={() => navigate('/running')}
         >
-          ♟
+          <RunningIcon name="run" size={34} />
         </button>
 
         {navigationItems.slice(2).map((item) => {

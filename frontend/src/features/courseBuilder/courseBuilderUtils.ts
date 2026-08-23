@@ -57,3 +57,21 @@ export function formatDistanceKm(value: number) {
 export function kakaoSearchUrl(name: string) {
   return `https://map.kakao.com/link/search/${encodeURIComponent(name)}`
 }
+
+export function cleanDisplayText(value: string | null) {
+  if (!value) return null
+  const text = value
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p\s*>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/[ \t\r\f\v]+/g, ' ')
+    .replace(/\n\s*/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  return text || null
+}

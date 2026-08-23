@@ -47,7 +47,16 @@ public class KakaoPlaceClient {
     }
 
     public List<KakaoPlace> searchKeywordInJeju(String keyword) {
-        return requestKeywordSearch(jejuScopedKeyword(keyword), null, null, null, null).stream()
+        List<KakaoPlace> directResults = jejuPlaces(requestKeywordSearch(keyword, null, null, null, null));
+        if (!directResults.isEmpty()) {
+            return directResults;
+        }
+
+        return jejuPlaces(requestKeywordSearch(jejuScopedKeyword(keyword), null, null, null, null));
+    }
+
+    private static List<KakaoPlace> jejuPlaces(List<KakaoPlace> places) {
+        return places.stream()
                 .filter(KakaoPlaceClient::isJejuPlace)
                 .toList();
     }

@@ -1,15 +1,24 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { FormEvent, PointerEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CourseBuilderMap } from '../../features/courseBuilder/CourseBuilderMap'
 import { courseBuilderService } from '../../features/courseBuilder/courseBuilderService'
 import { useCourseDraftStore } from '../../features/courseBuilder/courseDraftStore'
-import { JEJU_CENTER, approximateWalkingMinutes, difficultyLabel, formatDistanceKm, isInJejuBounds, kakaoSearchUrl } from '../../features/courseBuilder/courseBuilderUtils'
+import { JEJU_CENTER, approximateWalkingMinutes, cleanDisplayText, difficultyLabel, formatDistanceKm, isInJejuBounds, kakaoSearchUrl } from '../../features/courseBuilder/courseBuilderUtils'
 import { useRouteCalculation } from '../../features/courseBuilder/useRouteCalculation'
 import type { CourseWaypointDraft, DraftRoute, LatLng, PlaceDetail, PlaceSearchResult } from '../../features/courseBuilder/types'
 import { RunningIcon } from '../../features/running/RunningIcon'
 
 type SearchStatus = 'idle' | 'loading' | 'success' | 'error'
+type SheetSnap = 'peek' | 'full'
+
+type SheetControls = {
+  snap: SheetSnap
+  setSnap: (snap: SheetSnap) => void
+  toggleSnap: () => void
+  onPointerDown: (event: PointerEvent<HTMLElement>) => void
+  onPointerUp: (event: PointerEvent<HTMLElement>) => void
+}
 
 function categoryBadgeClass(categoryGroupCode: string | null) {
   if (categoryGroupCode === 'AT4') return 'bg-[#E8F6E8] text-[#16833A]'
@@ -38,6 +47,44 @@ function walkingMinuteText(minutes: number | null) {
   return minutes === null ? '거리 계산 전' : `약 ${minutes}분`
 }
 
+function useSheetControls(initialSnap: SheetSnap): SheetControls {
+  const [snap, setSnap] = useState<SheetSnap>(initialSnap)
+  const dragStartYRef = useRef<number | null>(null)
+  const didDragRef = useRef(false)
+
+  const toggleSnap = useCallback(() => {
+    if (didDragRef.current) {
+      didDragRef.current = false
+      return
+    }
+    setSnap((currentSnap) => currentSnap === 'full' ? 'peek' : 'full')
+  }, [])
+
+  const onPointerDown = useCallback((event: PointerEvent<HTMLElement>) => {
+    dragStartYRef.current = event.clientY
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }, [])
+
+  const onPointerUp = useCallback((event: PointerEvent<HTMLElement>) => {
+    const dragStartY = dragStartYRef.current
+    dragStartYRef.current = null
+    if (dragStartY === null) return
+
+    const dragDeltaY = event.clientY - dragStartY
+    if (dragDeltaY < -24) {
+      didDragRef.current = true
+      setSnap('full')
+      return
+    }
+    if (dragDeltaY > 24) {
+      didDragRef.current = true
+      setSnap('peek')
+    }
+  }, [])
+
+  return { snap, setSnap, toggleSnap, onPointerDown, onPointerUp }
+}
+
 export function CourseBuilderPage() {
   const navigate = useNavigate()
   const waypoints = useCourseDraftStore((state) => state.waypoints)
@@ -58,6 +105,11 @@ export function CourseBuilderPage() {
   const [searchError, setSearchError] = useState<string | null>(null)
   const [detailStatus, setDetailStatus] = useState<SearchStatus>('idle')
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(false)
+  const searchRequestIdRef = useRef(0)
+  const detailSheetControls = useSheetControls('peek')
+  const draftSheetControls = useSheetControls('peek')
+  const setDetailSheetSnap = detailSheetControls.setSnap
+  const setDraftSheetSnap = draftSheetControls.setSnap
 
   useRouteCalculation()
 
@@ -89,37 +141,62 @@ export function CourseBuilderPage() {
 
   const previousPoint = useMemo(() => referencePoint(waypoints, jejuCurrentPosition), [jejuCurrentPosition, waypoints])
 
-  const handleSearch = useCallback((event?: FormEvent<HTMLFormElement>) => {
-    event?.preventDefault()
-    const trimmedKeyword = keyword.trim()
+  const executeSearch = useCallback((trimmedKeyword: string) => {
     if (!trimmedKeyword) return
 
+    const requestId = searchRequestIdRef.current + 1
+    searchRequestIdRef.current = requestId
     setSearchStatus('loading')
     setSearchError(null)
     setSelectedPlace(null)
     setSelectedPlaceDetail(null)
     courseBuilderService.searchPlaces(trimmedKeyword, searchCenter.lat, searchCenter.lng, 5_000)
       .then((places) => {
+        if (searchRequestIdRef.current !== requestId) return
         setSearchResults(places)
         setSearchStatus('success')
       })
       .catch(() => {
+        if (searchRequestIdRef.current !== requestId) return
         setSearchResults([])
         setSearchStatus('error')
         setSearchError('장소 검색에 실패했어요. 잠시 후 다시 시도해 주세요.')
       })
-  }, [keyword, searchCenter.lat, searchCenter.lng, setSelectedPlace, setSelectedPlaceDetail])
+  }, [searchCenter.lat, searchCenter.lng, setSelectedPlace, setSelectedPlaceDetail])
+
+  useEffect(() => {
+    const trimmedKeyword = keyword.trim()
+    if (trimmedKeyword.length < 2) {
+      searchRequestIdRef.current += 1
+      setSearchResults([])
+      setSearchStatus('idle')
+      setSearchError(null)
+      return
+    }
+
+    const timerId = window.setTimeout(() => executeSearch(trimmedKeyword), 350)
+    return () => window.clearTimeout(timerId)
+  }, [executeSearch, keyword])
+
+  const handleSearch = useCallback((event?: FormEvent<HTMLFormElement>) => {
+    event?.preventDefault()
+    const trimmedKeyword = keyword.trim()
+    if (!trimmedKeyword) return
+    executeSearch(trimmedKeyword)
+  }, [executeSearch, keyword])
 
   const handleSelectPlace = useCallback((place: PlaceSearchResult) => {
     setSelectedPlace(place)
     setSelectedPlaceDetail(null)
     setDetailStatus('loading')
     setIsOverviewExpanded(false)
+    setDetailSheetSnap('peek')
+    setSearchStatus('idle')
+    setSearchResults([])
     courseBuilderService.getPlaceDetail(place)
       .then((detail) => {
         setSelectedPlaceDetail(detail)
         setDetailStatus('success')
-        setSearchResults([])
       })
       .catch(() => {
         setSelectedPlaceDetail({
@@ -130,6 +207,7 @@ export function CourseBuilderPage() {
           lat: place.lat,
           lng: place.lng,
           phone: null,
+          kakaoPlaceUrl: null,
           tourApiMatched: false,
           tourContentId: null,
           tourContentTypeId: null,
@@ -139,9 +217,8 @@ export function CourseBuilderPage() {
           tourDataRaw: null,
         })
         setDetailStatus('error')
-        setSearchResults([])
       })
-  }, [setSelectedPlace, setSelectedPlaceDetail])
+  }, [setDetailSheetSnap, setSelectedPlace, setSelectedPlaceDetail])
 
   const handleAddWaypoint = useCallback(() => {
     if (!selectedPlace || !selectedPlaceDetail) return
@@ -149,7 +226,33 @@ export function CourseBuilderPage() {
     setKeyword('')
     setSearchStatus('idle')
     setSearchResults([])
-  }, [addWaypoint, selectedPlace, selectedPlaceDetail])
+    setSelectedPlace(null)
+    setSelectedPlaceDetail(null)
+    setDraftSheetSnap('full')
+  }, [addWaypoint, selectedPlace, selectedPlaceDetail, setDraftSheetSnap, setSelectedPlace, setSelectedPlaceDetail])
+
+  const handleClearSearch = useCallback(() => {
+    searchRequestIdRef.current += 1
+    setKeyword('')
+    setSearchStatus('idle')
+    setSearchResults([])
+    setSearchError(null)
+    setSelectedPlace(null)
+    setSelectedPlaceDetail(null)
+  }, [setSelectedPlace, setSelectedPlaceDetail])
+
+  const handleMapPress = useCallback(() => {
+    setSearchStatus('idle')
+    setSearchResults([])
+    setSearchError(null)
+    if (selectedPlace) {
+      setDetailSheetSnap('peek')
+    }
+  }, [selectedPlace, setDetailSheetSnap])
+
+  const handleSelectedPlaceMarkerClick = useCallback(() => {
+    setDetailSheetSnap('full')
+  }, [setDetailSheetSnap])
 
   function handleSave() {
     if (waypoints.length < 2) {
@@ -170,6 +273,8 @@ export function CourseBuilderPage() {
         waypoints={waypoints}
         draftRoute={draftRoute}
         selectedPlace={selectedPlace}
+        onMapPress={handleMapPress}
+        onSelectedPlaceMarkerClick={handleSelectedPlaceMarkerClick}
       />
 
       <header className="course-builder-header">
@@ -189,9 +294,7 @@ export function CourseBuilderPage() {
             placeholder="관광지/맛집/숙소 검색"
             aria-label="관광지/맛집/숙소 검색"
           />
-          {keyword && (
-            <button type="button" aria-label="검색어 지우기" onClick={() => setKeyword('')}>×</button>
-          )}
+          {keyword && <button type="button" aria-label="검색어 지우기" onClick={handleClearSearch}>×</button>}
         </form>
         <SearchResultSheet
           currentPosition={previousPoint}
@@ -213,10 +316,12 @@ export function CourseBuilderPage() {
           isAdded={waypoints.some((waypoint) => waypoint.kakaoPlaceId === selectedPlace.kakaoPlaceId)}
           detailStatus={detailStatus}
           isOverviewExpanded={isOverviewExpanded}
+          sheetControls={detailSheetControls}
           onToggleOverview={() => setIsOverviewExpanded((value) => !value)}
           onClose={() => {
             setSelectedPlace(null)
             setSelectedPlaceDetail(null)
+            setDetailSheetSnap('peek')
           }}
           onAdd={handleAddWaypoint}
         />
@@ -226,6 +331,7 @@ export function CourseBuilderPage() {
           draftRoute={draftRoute}
           routeStatus={routeStatus}
           routeError={routeError}
+          sheetControls={draftSheetControls}
           onRemove={removeWaypoint}
           onReset={resetDraft}
         />
@@ -274,6 +380,7 @@ type WaypointDetailSheetProps = {
   isAdded: boolean
   detailStatus: SearchStatus
   isOverviewExpanded: boolean
+  sheetControls: SheetControls
   onToggleOverview: () => void
   onClose: () => void
   onAdd: () => void
@@ -286,18 +393,31 @@ function WaypointDetailSheet({
   isAdded,
   detailStatus,
   isOverviewExpanded,
+  sheetControls,
   onToggleOverview,
   onClose,
   onAdd,
 }: WaypointDetailSheetProps) {
   const isTourism = place.categoryGroupCode === 'AT4'
   const isTourApiMatched = isTourism && detail.tourApiMatched
-  const overview = detail.overview?.trim()
+  const overview = cleanDisplayText(detail.overview)
+  const useTime = cleanDisplayText(detail.useTime)
+  const kakaoPlaceUrl = detail.kakaoPlaceUrl ?? kakaoSearchUrl(detail.name)
   const shouldClampOverview = Boolean(overview && overview.length > 96)
 
   return (
-    <section className="course-place-detail-sheet">
-      <span className="course-sheet-handle" />
+    <section
+      className="course-place-detail-sheet"
+      data-snap={sheetControls.snap}
+    >
+      <button
+        type="button"
+        className="course-sheet-handle"
+        aria-label={sheetControls.snap === 'full' ? '상세 정보 접기' : '상세 정보 펼치기'}
+        onClick={sheetControls.toggleSnap}
+        onPointerDown={sheetControls.onPointerDown}
+        onPointerUp={sheetControls.onPointerUp}
+      />
       <div className="course-place-detail-header">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -317,41 +437,64 @@ function WaypointDetailSheet({
         {detail.phone && <span>{detail.phone}</span>}
       </div>
 
-      {isTourApiMatched && (
-        <div className="course-tour-card">
-          {detail.firstImageUrl && <img src={detail.firstImageUrl} alt="" />}
-          {overview && (
-            <div>
-              <p className={isOverviewExpanded ? '' : 'line-clamp-3'}>{overview}</p>
-              {shouldClampOverview && (
-                <button type="button" onClick={onToggleOverview}>
-                  {isOverviewExpanded ? '접기' : '더보기'}
-                </button>
-              )}
+      <div className="course-place-detail-body">
+        {isTourApiMatched && (
+          <div className="course-tour-card">
+            {detail.firstImageUrl && <img src={detail.firstImageUrl} alt="" />}
+            {useTime && (
+              <dl className="course-detail-info-list">
+                <div>
+                  <dt>이용 시간</dt>
+                  <dd>{useTime}</dd>
+                </div>
+              </dl>
+            )}
+            {overview && (
+              <div>
+                <p className={isOverviewExpanded ? '' : 'line-clamp-3'}>{overview}</p>
+                {shouldClampOverview && (
+                  <button type="button" onClick={onToggleOverview}>
+                    {isOverviewExpanded ? '접기' : '더보기'}
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="course-detail-actions">
+              <a href={kakaoPlaceUrl} target="_blank" rel="noreferrer">카카오맵에서 보기</a>
             </div>
-          )}
-          {detail.useTime && <small>이용 시간 {detail.useTime}</small>}
-          <em>정보 제공: 한국관광공사</em>
-        </div>
-      )}
+            <em>정보 제공: 한국관광공사</em>
+          </div>
+        )}
 
-      {isTourism && !detail.tourApiMatched && (
-        <div className="course-tour-fallback">
-          <strong>상세 정보를 준비 중인 장소예요</strong>
-          <p>한국관광공사 데이터와 아직 매칭되지 않았어요.</p>
-          <a href={kakaoSearchUrl(detail.name)} target="_blank" rel="noreferrer">카카오맵에서 보기</a>
-        </div>
-      )}
+        {isTourism && !detail.tourApiMatched && (
+          <div className="course-tour-fallback">
+            <strong>상세 정보를 준비 중인 장소예요</strong>
+            <p>한국관광공사 데이터와 아직 매칭되지 않았어요.</p>
+            <a href={kakaoPlaceUrl} target="_blank" rel="noreferrer">카카오맵에서 보기</a>
+          </div>
+        )}
 
-      {!isTourism && (
-        <div className="course-kakao-only-card">
-          <strong>{detail.categoryName || place.categoryName || '카카오 장소 정보'}</strong>
-          <p>{detail.address || '주소 정보 없음'}</p>
-          {detail.phone && <small>{detail.phone}</small>}
-        </div>
-      )}
+        {!isTourism && (
+          <div className="course-kakao-only-card">
+            <strong>{detail.categoryName || place.categoryName || '카카오 장소 정보'}</strong>
+            <dl className="course-detail-info-list">
+              <div>
+                <dt>주소</dt>
+                <dd>{detail.address || '주소 정보 없음'}</dd>
+              </div>
+              {detail.phone && (
+                <div>
+                  <dt>전화</dt>
+                  <dd>{detail.phone}</dd>
+                </div>
+              )}
+            </dl>
+            <a href={kakaoPlaceUrl} target="_blank" rel="noreferrer">카카오맵에서 보기</a>
+          </div>
+        )}
 
-      {detailStatus === 'error' && <p className="course-detail-notice">카카오 상세 조회가 불안정해서 기본 정보만 표시해요.</p>}
+        {detailStatus === 'error' && <p className="course-detail-notice">카카오 상세 조회가 불안정해서 기본 정보만 표시해요.</p>}
+      </div>
 
       <button type="button" className="course-add-button" disabled={isAdded} onClick={onAdd}>
         {isAdded ? '이미 추가된 장소' : '+ 코스에 추가하기'}
@@ -365,6 +508,7 @@ type CourseDraftBottomSheetProps = {
   draftRoute: DraftRoute | null
   routeStatus: 'idle' | 'loading' | 'success' | 'error'
   routeError: string | null
+  sheetControls: SheetControls
   onRemove: (orderIndex: number) => void
   onReset: () => void
 }
@@ -374,6 +518,7 @@ function CourseDraftBottomSheet({
   draftRoute,
   routeStatus,
   routeError,
+  sheetControls,
   onRemove,
   onReset,
 }: CourseDraftBottomSheetProps) {
@@ -382,8 +527,18 @@ function CourseDraftBottomSheet({
   const elevationGainM = draftRoute ? Math.round(draftRoute.elevationGainM) : 0
 
   return (
-    <section className="course-draft-bottom-sheet">
-      <span className="course-sheet-handle" />
+    <section
+      className="course-draft-bottom-sheet"
+      data-snap={sheetControls.snap}
+    >
+      <button
+        type="button"
+        className="course-sheet-handle"
+        aria-label={sheetControls.snap === 'full' ? '코스 초안 접기' : '코스 초안 펼치기'}
+        onClick={sheetControls.toggleSnap}
+        onPointerDown={sheetControls.onPointerDown}
+        onPointerUp={sheetControls.onPointerUp}
+      />
       <div className="course-draft-stats">
         <Stat label="총 거리" value={distanceKm} unit="km" />
         <Stat label="예상 시간" value={String(estimatedMinutes)} unit="분" />

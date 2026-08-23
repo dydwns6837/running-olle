@@ -43,7 +43,7 @@ type KakaoPolylineOptions = {
 type KakaoCustomOverlayOptions = {
   map: KakaoMap
   position: KakaoLatLng
-  content: string
+  content: string | HTMLElement
   zIndex?: number
   yAnchor?: number
 }
@@ -66,6 +66,9 @@ export type KakaoMapsNamespace = {
   Polyline: new (options: KakaoPolylineOptions) => KakaoPolyline
   CustomOverlay: new (options: KakaoCustomOverlayOptions) => KakaoCustomOverlay
   Circle: new (options: KakaoCircleOptions) => KakaoCircle
+  event: {
+    addListener(target: object, type: string, handler: () => void): void
+  }
 }
 
 declare global {

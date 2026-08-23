@@ -25,6 +25,7 @@ export type PlaceDetail = {
   lat: number
   lng: number
   phone: string | null
+  kakaoPlaceUrl: string | null
   tourApiMatched: boolean
   tourContentId: string | null
   tourContentTypeId: string | null

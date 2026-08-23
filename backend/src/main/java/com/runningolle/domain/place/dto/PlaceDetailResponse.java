@@ -10,6 +10,7 @@ public record PlaceDetailResponse(
         double lat,
         double lng,
         String phone,
+        String kakaoPlaceUrl,
         boolean tourApiMatched,
         String tourContentId,
         String tourContentTypeId,

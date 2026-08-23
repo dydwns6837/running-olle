@@ -106,9 +106,10 @@ class PlaceServiceTest {
 
     @Test
     void includesOfficialTourismKeywordResultWhenPlaceIsOutsideNearbyRadius() {
+        KakaoPlace unrelatedRestaurant = kakaoPlace("kakao-lilis", "리리스", "FD6", "음식점", 33.489, 126.488);
         TourismPlace tourismPlace = tourismPlace("tour-seongsan", "성산일출봉", 33.462147, 126.936424);
         given(kakaoPlaceClient.searchKeyword("성산일출봉", 37.497952, 127.027619, 5_000))
-                .willReturn(List.of());
+                .willReturn(List.of(unrelatedRestaurant));
         given(kakaoPlaceClient.searchKeywordInJeju("성산일출봉"))
                 .willReturn(List.of());
         given(tourismPlaceRepository.searchNearbyOfficialTourismPlaces("성산일출봉", 37.497952, 127.027619, 5_000, 10))

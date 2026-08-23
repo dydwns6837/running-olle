@@ -17,6 +17,7 @@ import org.locationtech.jts.geom.Point;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.util.HtmlUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
@@ -44,9 +45,12 @@ public class PlaceService {
         validateCoordinate(lat, lng);
         int radius = normalizeRadius(radiusMeters);
 
-        List<KakaoPlace> nearbyKakaoPlaces = kakaoPlaceClient.searchKeyword(keyword, lat, lng, radius);
+        List<KakaoPlace> nearbyKakaoPlaces = relevantKakaoPlaces(
+                keyword,
+                kakaoPlaceClient.searchKeyword(keyword, lat, lng, radius)
+        );
         List<KakaoPlace> kakaoPlaces = nearbyKakaoPlaces.isEmpty()
-                ? kakaoPlaceClient.searchKeywordInJeju(keyword)
+                ? relevantKakaoPlaces(keyword, kakaoPlaceClient.searchKeywordInJeju(keyword))
                 : nearbyKakaoPlaces;
         List<PlaceSearchResultResponse> kakaoResults = kakaoPlaces.stream()
                 .map(place -> PlaceSearchResultResponse.from(place, isTourismCandidate(place.categoryGroupCode())))
@@ -107,6 +111,12 @@ public class PlaceService {
         tourismPlaceRepository.searchOfficialTourismPlacesByKeyword(keyword.trim(), TOURISM_SEARCH_LIMIT)
                 .forEach(place -> places.putIfAbsent(place.getContentId(), place));
         return List.copyOf(places.values());
+    }
+
+    private static List<KakaoPlace> relevantKakaoPlaces(String keyword, List<KakaoPlace> places) {
+        return places.stream()
+                .filter(place -> isRelevantKakaoPlace(keyword, place))
+                .toList();
     }
 
     private static List<PlaceSearchResultResponse> concat(
@@ -209,12 +219,13 @@ public class PlaceService {
                 kakaoPlace.lat(),
                 kakaoPlace.lng(),
                 kakaoPlace.phone(),
+                kakaoPlace.placeUrl(),
                 true,
                 tourismPlace.getContentId(),
                 tourismPlace.getContentTypeId(),
-                tourismPlace.getOverview(),
+                cleanTourText(tourismPlace.getOverview()),
                 tourismPlace.getFirstImageUrl(),
-                tourismPlace.getUseTime(),
+                cleanTourText(tourismPlace.getUseTime()),
                 nullIfMissing(tourismPlace.getRawData())
         );
     }
@@ -228,12 +239,13 @@ public class PlaceService {
                 tourismPlace.getLocation().getY(),
                 tourismPlace.getLocation().getX(),
                 tourismPlace.getTel(),
+                null,
                 true,
                 tourismPlace.getContentId(),
                 tourismPlace.getContentTypeId(),
-                tourismPlace.getOverview(),
+                cleanTourText(tourismPlace.getOverview()),
                 tourismPlace.getFirstImageUrl(),
-                tourismPlace.getUseTime(),
+                cleanTourText(tourismPlace.getUseTime()),
                 nullIfMissing(tourismPlace.getRawData())
         );
     }
@@ -247,6 +259,7 @@ public class PlaceService {
                 kakaoPlace.lat(),
                 kakaoPlace.lng(),
                 kakaoPlace.phone(),
+                kakaoPlace.placeUrl(),
                 false,
                 null,
                 null,
@@ -306,6 +319,72 @@ public class PlaceService {
 
     private static String address(KakaoPlace kakaoPlace) {
         return firstNonBlank(kakaoPlace.roadAddress(), kakaoPlace.address());
+    }
+
+    private static boolean isRelevantKakaoPlace(String keyword, KakaoPlace place) {
+        String normalizedKeyword = normalizeName(keyword);
+        if (!StringUtils.hasText(normalizedKeyword)) {
+            return true;
+        }
+
+        String searchableText = normalizeName(String.join(
+                " ",
+                nullToEmpty(place.name()),
+                nullToEmpty(place.categoryGroupName()),
+                nullToEmpty(place.categoryName()),
+                nullToEmpty(place.address()),
+                nullToEmpty(place.roadAddress())
+        ));
+
+        if (searchableText.contains(normalizedKeyword)) {
+            return true;
+        }
+
+        return keywordTokens(keyword).stream()
+                .allMatch(token -> searchableText.contains(token) || categoryAliasMatches(token, place));
+    }
+
+    private static List<String> keywordTokens(String keyword) {
+        return java.util.Arrays.stream(keyword.trim().split("\\s+"))
+                .map(PlaceService::normalizeName)
+                .filter(StringUtils::hasText)
+                .filter(token -> !List.of("제주", "제주도", "제주특별자치도").contains(token))
+                .toList();
+    }
+
+    private static boolean categoryAliasMatches(String token, KakaoPlace place) {
+        String categoryText = normalizeName(String.join(
+                " ",
+                nullToEmpty(place.categoryGroupName()),
+                nullToEmpty(place.categoryName())
+        ));
+        return switch (token) {
+            case "맛집", "식당", "음식점" -> categoryText.contains("음식점");
+            case "카페", "커피" -> categoryText.contains("카페");
+            case "편의점" -> categoryText.contains("편의점");
+            case "숙소", "호텔", "펜션", "게스트하우스" -> categoryText.contains("숙박");
+            default -> false;
+        };
+    }
+
+    private static String cleanTourText(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        String text = value.replaceAll("(?i)<br\\s*/?>", "\n");
+        text = text.replaceAll("(?i)</p\\s*>", "\n");
+        text = text.replaceAll("<[^>]+>", " ");
+        text = HtmlUtils.htmlUnescape(text);
+        text = text.replace('\u00a0', ' ');
+        text = text.replaceAll("[ \\t\\x0B\\f\\r]+", " ");
+        text = text.replaceAll("\\n\\s*", "\n");
+        text = text.replaceAll("\\n{3,}", "\n\n");
+        text = text.trim();
+        return text.isBlank() ? null : text;
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
     }
 
     private static String officialTourismCategoryName(String contentTypeId) {

@@ -10,14 +10,24 @@ type Props = {
   draftRoute: DraftRoute | null
   selectedPlace: PlaceSearchResult | null
   className?: string
+  onMapPress?: () => void
+  onSelectedPlaceMarkerClick?: () => void
 }
 
 function markerContent(index: number) {
   return `<div class="course-builder-marker">${index}</div>`
 }
 
-function selectedMarkerContent() {
-  return '<div class="course-builder-selected-marker" aria-hidden="true"></div>'
+function selectedMarkerContent(onClick?: () => void) {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'course-builder-selected-marker'
+  button.setAttribute('aria-label', '선택한 장소 상세 보기')
+  button.addEventListener('click', (event) => {
+    event.stopPropagation()
+    onClick?.()
+  })
+  return button
 }
 
 function currentMarkerContent() {
@@ -30,6 +40,8 @@ export function CourseBuilderMap({
   draftRoute,
   selectedPlace,
   className = '',
+  onMapPress,
+  onSelectedPlaceMarkerClick,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<KakaoMap | null>(null)
@@ -37,9 +49,14 @@ export function CourseBuilderMap({
   const waypointOverlayRefs = useRef<KakaoCustomOverlay[]>([])
   const selectedOverlayRef = useRef<KakaoCustomOverlay | null>(null)
   const currentOverlayRef = useRef<KakaoCustomOverlay | null>(null)
+  const onMapPressRef = useRef(onMapPress)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const appKey = getKakaoMapAppKey()
+
+  useEffect(() => {
+    onMapPressRef.current = onMapPress
+  }, [onMapPress])
 
   useEffect(() => {
     if (!containerRef.current || !appKey) return
@@ -62,6 +79,7 @@ export function CourseBuilderMap({
           strokeOpacity: 0.96,
           strokeStyle: 'solid',
         })
+        maps.event.addListener(map, 'click', () => onMapPressRef.current?.())
         mapRef.current = map
         setReady(true)
         window.setTimeout(() => map.relayout(), 0)
@@ -119,12 +137,12 @@ export function CourseBuilderMap({
     selectedOverlayRef.current = new window.kakao.maps.CustomOverlay({
       map: mapRef.current,
       position,
-      content: selectedMarkerContent(),
+      content: selectedMarkerContent(onSelectedPlaceMarkerClick),
       zIndex: 11,
       yAnchor: 1,
     })
     mapRef.current.panTo(position)
-  }, [ready, selectedPlace])
+  }, [onSelectedPlaceMarkerClick, ready, selectedPlace])
 
   function zoomBy(delta: number) {
     if (!mapRef.current) return

@@ -45,6 +45,19 @@ class ExternalApiClientSmokeTest {
     }
 
     @Test
+    void tourApiClientCanLoadJejuAreaBasedTourismItems() {
+        ExternalApiProperties properties = properties();
+        assumeTrue(StringUtils.hasText(properties.getTourApiKey()), "TourAPI service key is required.");
+
+        TourApiClient client = new TourApiClient(properties);
+
+        var page = client.getAreaBasedList("39", "12", 1, 5);
+
+        assertThat(page.items()).isNotNull();
+        assertThat(page.totalCount()).isNotNegative();
+    }
+
+    @Test
     void openRouteServiceClientCanCalculateJejuWalkingRoute() {
         ExternalApiProperties properties = properties();
         assumeTrue(StringUtils.hasText(properties.getOpenRouteServiceKey()), "OpenRouteService API key is required.");

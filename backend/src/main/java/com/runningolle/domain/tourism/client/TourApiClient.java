@@ -69,6 +69,43 @@ public class TourApiClient {
         }
     }
 
+    public TourAreaPage getAreaBasedList(String areaCode, String contentTypeId, int pageNo, int numOfRows) {
+        validateApiKey();
+
+        try {
+            Map<String, Object> response = restClient.get()
+                    .uri(tourApiUri("/areaBasedList2", Map.ofEntries(
+                            Map.entry("serviceKey", serviceKey()),
+                            Map.entry("MobileOS", properties.getTourMobileOs()),
+                            Map.entry("MobileApp", properties.getTourMobileApp()),
+                            Map.entry("_type", JSON_TYPE),
+                            Map.entry("numOfRows", Math.max(1, numOfRows)),
+                            Map.entry("pageNo", Math.max(1, pageNo)),
+                            Map.entry("arrange", "C"),
+                            Map.entry("areaCode", areaCode),
+                            Map.entry("contentTypeId", contentTypeId)
+                    )))
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, ExternalApiRestClientSupport.errorHandler(PROVIDER))
+                    .body(new ParameterizedTypeReference<>() {
+                    });
+
+            validateTourApiResponse(response, "지역 기반 관광정보 조회");
+            return new TourAreaPage(
+                    extractItems(response).stream()
+                            .map(TourAreaItem::from)
+                            .toList(),
+                    Math.max(1, pageNo),
+                    Math.max(1, numOfRows),
+                    extractTotalCount(response)
+            );
+        } catch (ExternalApiException exception) {
+            throw exception;
+        } catch (RestClientException exception) {
+            throw new ExternalApiException(PROVIDER, "TourAPI 지역 기반 관광정보 조회에 실패했습니다.", exception);
+        }
+    }
+
     public Optional<TourCommonDetail> getCommonDetail(String contentId) {
         if (!StringUtils.hasText(contentId)) {
             return Optional.empty();
@@ -77,14 +114,21 @@ public class TourApiClient {
 
         try {
             Map<String, Object> response = restClient.get()
-                    .uri(tourApiUri("/detailCommon2", Map.of(
-                            "serviceKey", serviceKey(),
-                            "MobileOS", properties.getTourMobileOs(),
-                            "MobileApp", properties.getTourMobileApp(),
-                            "_type", JSON_TYPE,
-                            "contentId", contentId.trim(),
-                            "numOfRows", 1,
-                            "pageNo", 1
+                    .uri(tourApiUri("/detailCommon2", Map.ofEntries(
+                            Map.entry("serviceKey", serviceKey()),
+                            Map.entry("MobileOS", properties.getTourMobileOs()),
+                            Map.entry("MobileApp", properties.getTourMobileApp()),
+                            Map.entry("_type", JSON_TYPE),
+                            Map.entry("contentId", contentId.trim()),
+                            Map.entry("defaultYN", "Y"),
+                            Map.entry("firstImageYN", "Y"),
+                            Map.entry("addrinfoYN", "Y"),
+                            Map.entry("mapinfoYN", "Y"),
+                            Map.entry("overviewYN", "Y"),
+                            Map.entry("areacodeYN", "Y"),
+                            Map.entry("catcodeYN", "Y"),
+                            Map.entry("numOfRows", 1),
+                            Map.entry("pageNo", 1)
                     )))
                     .retrieve()
                     .onStatus(HttpStatusCode::isError, ExternalApiRestClientSupport.errorHandler(PROVIDER))
@@ -152,6 +196,12 @@ public class TourApiClient {
                 common == null ? contentTypeId : common.contentTypeId(),
                 common == null ? null : common.title(),
                 common == null ? null : common.address(),
+                common == null ? null : common.detailAddress(),
+                common == null ? null : common.areaCode(),
+                common == null ? null : common.sigunguCode(),
+                common == null ? null : common.category1(),
+                common == null ? null : common.category2(),
+                common == null ? null : common.category3(),
                 common == null ? null : common.lat(),
                 common == null ? null : common.lng(),
                 common == null ? null : common.overview(),
@@ -236,6 +286,11 @@ public class TourApiClient {
         return List.of();
     }
 
+    private static int extractTotalCount(Map<String, Object> response) {
+        Integer totalCount = readInteger(getNestedValue(response, "response", "body", "totalCount"));
+        return totalCount == null ? 0 : totalCount;
+    }
+
     private static Object getNestedValue(Map<String, Object> source, String... keys) {
         Object current = source;
         for (String key : keys) {
@@ -268,6 +323,20 @@ public class TourApiClient {
         }
         try {
             return Double.parseDouble(value);
+        } catch (NumberFormatException exception) {
+            return null;
+        }
+    }
+
+    private static Integer readInteger(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            if (value instanceof Number number) {
+                return number.intValue();
+            }
+            return Integer.parseInt(String.valueOf(value).trim());
         } catch (NumberFormatException exception) {
             return null;
         }
@@ -308,11 +377,70 @@ public class TourApiClient {
         }
     }
 
+    public record TourAreaPage(
+            List<TourAreaItem> items,
+            int pageNo,
+            int numOfRows,
+            int totalCount
+    ) {
+    }
+
+    public record TourAreaItem(
+            String contentId,
+            String contentTypeId,
+            String title,
+            String address,
+            String detailAddress,
+            String areaCode,
+            String sigunguCode,
+            String category1,
+            String category2,
+            String category3,
+            String tel,
+            Double lat,
+            Double lng,
+            String firstImageUrl,
+            String thumbnailImageUrl,
+            String createdTime,
+            String modifiedTime,
+            Map<String, Object> raw
+    ) {
+
+        private static TourAreaItem from(Map<String, Object> raw) {
+            return new TourAreaItem(
+                    readString(raw, "contentid"),
+                    readString(raw, "contenttypeid"),
+                    readString(raw, "title"),
+                    readString(raw, "addr1"),
+                    readString(raw, "addr2"),
+                    readString(raw, "areacode"),
+                    readString(raw, "sigungucode"),
+                    readString(raw, "cat1"),
+                    readString(raw, "cat2"),
+                    readString(raw, "cat3"),
+                    readString(raw, "tel"),
+                    readDouble(raw, "mapy"),
+                    readDouble(raw, "mapx"),
+                    readString(raw, "firstimage"),
+                    readFirstString(raw, "firstimage2", "firstimage"),
+                    readString(raw, "createdtime"),
+                    readString(raw, "modifiedtime"),
+                    raw
+            );
+        }
+    }
+
     public record TourCommonDetail(
             String contentId,
             String contentTypeId,
             String title,
             String address,
+            String detailAddress,
+            String areaCode,
+            String sigunguCode,
+            String category1,
+            String category2,
+            String category3,
             Double lat,
             Double lng,
             String overview,
@@ -326,6 +454,12 @@ public class TourApiClient {
                     readString(raw, "contenttypeid"),
                     readString(raw, "title"),
                     readString(raw, "addr1"),
+                    readString(raw, "addr2"),
+                    readString(raw, "areacode"),
+                    readString(raw, "sigungucode"),
+                    readString(raw, "cat1"),
+                    readString(raw, "cat2"),
+                    readString(raw, "cat3"),
                     readDouble(raw, "mapy"),
                     readDouble(raw, "mapx"),
                     readString(raw, "overview"),
@@ -365,6 +499,12 @@ public class TourApiClient {
             String contentTypeId,
             String title,
             String address,
+            String detailAddress,
+            String areaCode,
+            String sigunguCode,
+            String category1,
+            String category2,
+            String category3,
             Double lat,
             Double lng,
             String overview,

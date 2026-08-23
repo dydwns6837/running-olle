@@ -22,6 +22,15 @@ server:
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
 
+tourism:
+  sync:
+    area-code: "39"
+    content-type-ids: [ "12", "14", "28" ]
+    page-size: 100
+    scheduler-enabled: false
+    cron: "0 0 4 * * *"
+    zone: Asia/Seoul
+
 logging:
   level:
     org.hibernate.SQL: debug

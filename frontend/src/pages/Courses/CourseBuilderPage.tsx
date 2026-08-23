@@ -263,7 +263,7 @@ export function CourseBuilderPage() {
       window.alert('경로 계산이 끝난 뒤 저장할 수 있어요.')
       return
     }
-    window.alert('코스 저장 상세정보 화면은 다음 Phase에서 연결할게요.')
+    navigate('/courses/create/save')
   }
 
   return (

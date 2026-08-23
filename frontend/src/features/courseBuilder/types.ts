@@ -35,6 +35,19 @@ export type PlaceDetail = {
   tourDataRaw: JsonValue | null
 }
 
+export type CourseType = 'RUNNING_COURSE' | 'SPOT_COURSE'
+
+export type ThemeOption = {
+  id: string
+  code: string
+  name: string
+}
+
+export type CourseTagOption = {
+  id: string
+  name: string
+}
+
 export type CourseWaypointDraft = {
   kakaoPlaceId: string | null
   name: string
@@ -70,4 +83,8 @@ export type DraftRoute = {
   routeCoordinates: RouteCoordinate[]
   routeLineStringWkt: string
   suggestedDifficulty: 'LOW' | 'MID' | 'HIGH'
+}
+
+export type CourseCreateResponse = {
+  courseId: string
 }

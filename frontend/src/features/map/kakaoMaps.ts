@@ -7,8 +7,13 @@ export type KakaoMap = {
   relayout(): void
   panTo(position: KakaoLatLng): void
   setCenter(position: KakaoLatLng): void
+  setBounds(bounds: KakaoLatLngBounds): void
   getLevel(): number
   setLevel(level: number): void
+}
+
+export type KakaoLatLngBounds = {
+  extend(position: KakaoLatLng): void
 }
 
 export type KakaoPolyline = {
@@ -62,6 +67,7 @@ type KakaoCircleOptions = {
 export type KakaoMapsNamespace = {
   load(callback: () => void): void
   LatLng: new (lat: number, lng: number) => KakaoLatLng
+  LatLngBounds: new () => KakaoLatLngBounds
   Map: new (container: HTMLElement, options: KakaoMapOptions) => KakaoMap
   Polyline: new (options: KakaoPolylineOptions) => KakaoPolyline
   CustomOverlay: new (options: KakaoCustomOverlayOptions) => KakaoCustomOverlay

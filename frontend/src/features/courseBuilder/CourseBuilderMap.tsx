@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { JEJU_CENTER } from './courseBuilderUtils'
 import { getKakaoMapAppKey, loadKakaoMapSdk } from '../map/kakaoMaps'
 import type { KakaoCustomOverlay, KakaoMap, KakaoPolyline } from '../map/kakaoMaps'
 import type { CourseWaypointDraft, DraftRoute, LatLng, PlaceSearchResult } from './types'
@@ -9,11 +10,6 @@ type Props = {
   draftRoute: DraftRoute | null
   selectedPlace: PlaceSearchResult | null
   className?: string
-}
-
-const JEJU_CENTER: LatLng = {
-  lat: 33.4996,
-  lng: 126.5312,
 }
 
 function markerContent(index: number) {

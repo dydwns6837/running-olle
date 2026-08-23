@@ -62,4 +62,27 @@ public interface TourismPlaceRepository extends JpaRepository<TourismPlace, UUID
             @Param("radiusMeters") double radiusMeters,
             @Param("resultLimit") int resultLimit
     );
+
+    @Query(value = """
+            SELECT *
+            FROM tourism_places
+            WHERE is_deleted = false
+              AND content_type_id IN ('12', '14', '28')
+              AND (
+                    LOWER(title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                    OR LOWER(COALESCE(address, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+                  )
+            ORDER BY
+              CASE
+                WHEN LOWER(title) = LOWER(:keyword) THEN 0
+                WHEN LOWER(title) LIKE LOWER(CONCAT(:keyword, '%')) THEN 1
+                ELSE 2
+              END,
+              title
+            LIMIT :resultLimit
+            """, nativeQuery = true)
+    List<TourismPlace> searchOfficialTourismPlacesByKeyword(
+            @Param("keyword") String keyword,
+            @Param("resultLimit") int resultLimit
+    );
 }

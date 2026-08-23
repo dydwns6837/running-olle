@@ -8,7 +8,9 @@ import com.runningolle.domain.place.dto.PlaceSearchResultResponse;
 import com.runningolle.domain.tourism.entity.TourismPlace;
 import com.runningolle.domain.tourism.repository.TourismPlaceRepository;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Point;
@@ -42,17 +44,14 @@ public class PlaceService {
         validateCoordinate(lat, lng);
         int radius = normalizeRadius(radiusMeters);
 
-        List<KakaoPlace> kakaoPlaces = kakaoPlaceClient.searchKeyword(keyword, lat, lng, radius);
+        List<KakaoPlace> nearbyKakaoPlaces = kakaoPlaceClient.searchKeyword(keyword, lat, lng, radius);
+        List<KakaoPlace> kakaoPlaces = nearbyKakaoPlaces.isEmpty()
+                ? kakaoPlaceClient.searchKeywordInJeju(keyword)
+                : nearbyKakaoPlaces;
         List<PlaceSearchResultResponse> kakaoResults = kakaoPlaces.stream()
                 .map(place -> PlaceSearchResultResponse.from(place, isTourismCandidate(place.categoryGroupCode())))
                 .toList();
-        List<PlaceSearchResultResponse> officialTourismResults = tourismPlaceRepository.searchNearbyOfficialTourismPlaces(
-                        keyword.trim(),
-                        lat,
-                        lng,
-                        radius,
-                        TOURISM_SEARCH_LIMIT
-                ).stream()
+        List<PlaceSearchResultResponse> officialTourismResults = searchOfficialTourismPlaces(keyword, lat, lng, radius).stream()
                 .filter(place -> !hasDuplicateKakaoPlace(place, kakaoPlaces))
                 .map(PlaceSearchResultResponse::fromOfficialTourism)
                 .toList();
@@ -93,6 +92,21 @@ public class PlaceService {
         }
 
         return kakaoOnlyDetail(kakaoPlace);
+    }
+
+    private List<TourismPlace> searchOfficialTourismPlaces(String keyword, double lat, double lng, int radius) {
+        Map<String, TourismPlace> places = new LinkedHashMap<>();
+        tourismPlaceRepository.searchNearbyOfficialTourismPlaces(
+                        keyword.trim(),
+                        lat,
+                        lng,
+                        radius,
+                        TOURISM_SEARCH_LIMIT
+                )
+                .forEach(place -> places.putIfAbsent(place.getContentId(), place));
+        tourismPlaceRepository.searchOfficialTourismPlacesByKeyword(keyword.trim(), TOURISM_SEARCH_LIMIT)
+                .forEach(place -> places.putIfAbsent(place.getContentId(), place));
+        return List.copyOf(places.values());
     }
 
     private static List<PlaceSearchResultResponse> concat(

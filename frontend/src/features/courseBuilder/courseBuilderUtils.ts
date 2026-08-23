@@ -3,6 +3,18 @@ import type { LatLng } from './types'
 const EARTH_RADIUS_METERS = 6_371_000
 const WALKING_SPEED_KM_PER_HOUR = 4
 
+export const JEJU_CENTER: LatLng = {
+  lat: 33.4996,
+  lng: 126.5312,
+}
+
+const JEJU_BOUNDS = {
+  minLat: 33.0,
+  maxLat: 34.0,
+  minLng: 126.0,
+  maxLng: 127.1,
+}
+
 function toRadians(degrees: number) {
   return degrees * Math.PI / 180
 }
@@ -22,6 +34,14 @@ export function approximateWalkingMinutes(from: LatLng | null, to: LatLng) {
   if (!from) return null
   const distanceKm = distanceMeters(from, to) / 1_000
   return Math.max(1, Math.round(distanceKm / WALKING_SPEED_KM_PER_HOUR * 60))
+}
+
+export function isInJejuBounds(position: LatLng | null) {
+  if (!position) return false
+  return position.lat >= JEJU_BOUNDS.minLat
+    && position.lat <= JEJU_BOUNDS.maxLat
+    && position.lng >= JEJU_BOUNDS.minLng
+    && position.lng <= JEJU_BOUNDS.maxLng
 }
 
 export function difficultyLabel(value: string) {

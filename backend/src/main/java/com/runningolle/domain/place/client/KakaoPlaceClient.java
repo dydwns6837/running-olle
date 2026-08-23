@@ -18,6 +18,11 @@ public class KakaoPlaceClient {
 
     private static final String PROVIDER = "Kakao Local";
     private static final String BASE_URL = "https://dapi.kakao.com";
+    private static final int KEYWORD_SEARCH_SIZE = 15;
+    private static final double JEJU_MIN_LAT = 33.0;
+    private static final double JEJU_MAX_LAT = 34.0;
+    private static final double JEJU_MIN_LNG = 126.0;
+    private static final double JEJU_MAX_LNG = 127.1;
 
     private final ExternalApiProperties properties;
     private final RestClient restClient;
@@ -38,6 +43,22 @@ public class KakaoPlaceClient {
             int radiusMeters,
             String categoryGroupCode
     ) {
+        return requestKeywordSearch(keyword, lat, lng, radiusMeters, categoryGroupCode);
+    }
+
+    public List<KakaoPlace> searchKeywordInJeju(String keyword) {
+        return requestKeywordSearch(jejuScopedKeyword(keyword), null, null, null, null).stream()
+                .filter(KakaoPlaceClient::isJejuPlace)
+                .toList();
+    }
+
+    private List<KakaoPlace> requestKeywordSearch(
+            String keyword,
+            Double lat,
+            Double lng,
+            Integer radiusMeters,
+            String categoryGroupCode
+    ) {
         if (!StringUtils.hasText(keyword)) {
             return List.of();
         }
@@ -48,10 +69,16 @@ public class KakaoPlaceClient {
                     .uri(uriBuilder -> {
                         var builder = uriBuilder.path("/v2/local/search/keyword.json")
                                 .queryParam("query", keyword.trim())
-                                .queryParam("x", lng)
-                                .queryParam("y", lat)
-                                .queryParam("radius", radiusMeters)
-                                .queryParam("sort", "distance");
+                                .queryParam("size", KEYWORD_SEARCH_SIZE);
+
+                        if (lat != null && lng != null && radiusMeters != null) {
+                            builder.queryParam("x", lng)
+                                    .queryParam("y", lat)
+                                    .queryParam("radius", radiusMeters)
+                                    .queryParam("sort", "distance");
+                        } else {
+                            builder.queryParam("sort", "accuracy");
+                        }
 
                         if (StringUtils.hasText(categoryGroupCode)) {
                             builder.queryParam("category_group_code", categoryGroupCode);
@@ -83,6 +110,27 @@ public class KakaoPlaceClient {
         if (!StringUtils.hasText(properties.getKakaoMapApiKey())) {
             throw new ExternalApiException(PROVIDER, "카카오 REST API 키가 설정되지 않았습니다.");
         }
+    }
+
+    private static String jejuScopedKeyword(String keyword) {
+        String trimmedKeyword = keyword == null ? "" : keyword.trim();
+        return trimmedKeyword.contains("제주") ? trimmedKeyword : "제주 " + trimmedKeyword;
+    }
+
+    private static boolean isJejuPlace(KakaoPlace place) {
+        if (place.lat() != null
+                && place.lng() != null
+                && place.lat() >= JEJU_MIN_LAT
+                && place.lat() <= JEJU_MAX_LAT
+                && place.lng() >= JEJU_MIN_LNG
+                && place.lng() <= JEJU_MAX_LNG) {
+            return true;
+        }
+        return containsJeju(place.address()) || containsJeju(place.roadAddress());
+    }
+
+    private static boolean containsJeju(String value) {
+        return StringUtils.hasText(value) && value.contains("제주");
     }
 
     public record KakaoPlace(

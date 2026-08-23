@@ -4,15 +4,10 @@ import { useNavigate } from 'react-router-dom'
 import { CourseBuilderMap } from '../../features/courseBuilder/CourseBuilderMap'
 import { courseBuilderService } from '../../features/courseBuilder/courseBuilderService'
 import { useCourseDraftStore } from '../../features/courseBuilder/courseDraftStore'
-import { approximateWalkingMinutes, difficultyLabel, formatDistanceKm, kakaoSearchUrl } from '../../features/courseBuilder/courseBuilderUtils'
+import { JEJU_CENTER, approximateWalkingMinutes, difficultyLabel, formatDistanceKm, isInJejuBounds, kakaoSearchUrl } from '../../features/courseBuilder/courseBuilderUtils'
 import { useRouteCalculation } from '../../features/courseBuilder/useRouteCalculation'
 import type { CourseWaypointDraft, DraftRoute, LatLng, PlaceDetail, PlaceSearchResult } from '../../features/courseBuilder/types'
 import { RunningIcon } from '../../features/running/RunningIcon'
-
-const JEJU_CENTER: LatLng = {
-  lat: 33.4996,
-  lng: 126.5312,
-}
 
 type SearchStatus = 'idle' | 'loading' | 'success' | 'error'
 
@@ -82,13 +77,17 @@ export function CourseBuilderPage() {
     })
   }, [])
 
+  const jejuCurrentPosition = useMemo(() => (
+    isInJejuBounds(currentPosition) ? currentPosition : null
+  ), [currentPosition])
+
   const searchCenter = useMemo(() => {
     const lastWaypoint = waypoints.at(-1)
     if (lastWaypoint) return { lat: lastWaypoint.lat, lng: lastWaypoint.lng }
-    return currentPosition ?? JEJU_CENTER
-  }, [currentPosition, waypoints])
+    return jejuCurrentPosition ?? JEJU_CENTER
+  }, [jejuCurrentPosition, waypoints])
 
-  const previousPoint = useMemo(() => referencePoint(waypoints, currentPosition), [currentPosition, waypoints])
+  const previousPoint = useMemo(() => referencePoint(waypoints, jejuCurrentPosition), [jejuCurrentPosition, waypoints])
 
   const handleSearch = useCallback((event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault()
@@ -167,7 +166,7 @@ export function CourseBuilderPage() {
   return (
     <main className="course-builder-page">
       <CourseBuilderMap
-        currentPosition={currentPosition}
+        currentPosition={jejuCurrentPosition}
         waypoints={waypoints}
         draftRoute={draftRoute}
         selectedPlace={selectedPlace}

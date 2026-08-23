@@ -51,8 +51,10 @@ class PlaceServiceTest {
                 .willReturn(List.of(
                         kakaoPlace("kakao-tour", "용두암", "AT4", "관광명소", 33.5161104, 126.5119574),
                         kakaoPlace("kakao-food", "제주식당", "FD6", "음식점", 33.5, 126.53)
-                ));
+        ));
         given(tourismPlaceRepository.searchNearbyOfficialTourismPlaces("제주", 33.4996213, 126.5311884, 5_000, 10))
+                .willReturn(List.of());
+        given(tourismPlaceRepository.searchOfficialTourismPlacesByKeyword("제주", 10))
                 .willReturn(List.of());
 
         var response = placeService.searchPlaces("제주", 33.4996213, 126.5311884, null);
@@ -68,8 +70,12 @@ class PlaceServiceTest {
         TourismPlace tourismPlace = tourismPlace("tour-saryeoni", "사려니숲길", 33.421530, 126.626488);
         given(kakaoPlaceClient.searchKeyword("사려니", 33.421530, 126.626488, 5_000))
                 .willReturn(List.of());
+        given(kakaoPlaceClient.searchKeywordInJeju("사려니"))
+                .willReturn(List.of());
         given(tourismPlaceRepository.searchNearbyOfficialTourismPlaces("사려니", 33.421530, 126.626488, 5_000, 10))
                 .willReturn(List.of(tourismPlace));
+        given(tourismPlaceRepository.searchOfficialTourismPlacesByKeyword("사려니", 10))
+                .willReturn(List.of());
 
         var response = placeService.searchPlaces("사려니", 33.421530, 126.626488, null);
 
@@ -89,11 +95,51 @@ class PlaceServiceTest {
                 .willReturn(List.of(kakaoPlace));
         given(tourismPlaceRepository.searchNearbyOfficialTourismPlaces("한라산", 33.361667, 126.529167, 5_000, 10))
                 .willReturn(List.of(tourismPlace));
+        given(tourismPlaceRepository.searchOfficialTourismPlacesByKeyword("한라산", 10))
+                .willReturn(List.of());
 
         var response = placeService.searchPlaces("한라산", 33.361667, 126.529167, null);
 
         assertThat(response).hasSize(1);
         assertThat(response.get(0).kakaoPlaceId()).isEqualTo("kakao-halla");
+    }
+
+    @Test
+    void includesOfficialTourismKeywordResultWhenPlaceIsOutsideNearbyRadius() {
+        TourismPlace tourismPlace = tourismPlace("tour-seongsan", "성산일출봉", 33.462147, 126.936424);
+        given(kakaoPlaceClient.searchKeyword("성산일출봉", 37.497952, 127.027619, 5_000))
+                .willReturn(List.of());
+        given(kakaoPlaceClient.searchKeywordInJeju("성산일출봉"))
+                .willReturn(List.of());
+        given(tourismPlaceRepository.searchNearbyOfficialTourismPlaces("성산일출봉", 37.497952, 127.027619, 5_000, 10))
+                .willReturn(List.of());
+        given(tourismPlaceRepository.searchOfficialTourismPlacesByKeyword("성산일출봉", 10))
+                .willReturn(List.of(tourismPlace));
+
+        var response = placeService.searchPlaces("성산일출봉", 37.497952, 127.027619, null);
+
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).kakaoPlaceId()).isEqualTo("tourapi:tour-seongsan");
+        assertThat(response.get(0).name()).isEqualTo("성산일출봉");
+    }
+
+    @Test
+    void fallsBackToJejuScopedKakaoSearchWhenNearbyKakaoSearchHasNoResult() {
+        KakaoPlace kakaoPlace = kakaoPlace("kakao-cafe", "성산 카페", "CE7", "카페", 33.462, 126.936);
+        given(kakaoPlaceClient.searchKeyword("성산 카페", 37.497952, 127.027619, 5_000))
+                .willReturn(List.of());
+        given(kakaoPlaceClient.searchKeywordInJeju("성산 카페"))
+                .willReturn(List.of(kakaoPlace));
+        given(tourismPlaceRepository.searchNearbyOfficialTourismPlaces("성산 카페", 37.497952, 127.027619, 5_000, 10))
+                .willReturn(List.of());
+        given(tourismPlaceRepository.searchOfficialTourismPlacesByKeyword("성산 카페", 10))
+                .willReturn(List.of());
+
+        var response = placeService.searchPlaces("성산 카페", 37.497952, 127.027619, null);
+
+        assertThat(response).hasSize(1);
+        assertThat(response.get(0).kakaoPlaceId()).isEqualTo("kakao-cafe");
+        assertThat(response.get(0).categoryGroupCode()).isEqualTo("CE7");
     }
 
     @Test

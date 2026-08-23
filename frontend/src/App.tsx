@@ -8,7 +8,7 @@ import { OnboardingPage } from './pages/Auth/OnboardingPage'
 import { CommunityPage } from './pages/Community/CommunityPage'
 import { CoursesPage } from './pages/Courses/CoursesPage'
 import { HomePage } from './pages/Home/HomePage'
-import { MyPage } from './pages/MyPage/MyPage'
+import { AccountPage, BookmarksPage, CompletedRunsPage, MyPage, NotificationPage, ProfileEditPage, ReportsPage, RunningHistoryPage, SettingsPage, TripCreatePage, TripsPage } from './pages/MyPage/MyPage'
 import { FreeRunReadyPage } from './pages/Running/FreeRunReadyPage'
 import { LiveRunningPage } from './pages/Running/LiveRunningPage'
 import { RunningCompletePage } from './pages/Running/RunningCompletePage'
@@ -19,6 +19,11 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+      {import.meta.env.DEV && (
+        <Route element={<AppLayout />}>
+          <Route path="/dev/mypage" element={<MyPage />} />
+        </Route>
+      )}
 
       <Route element={<RequireAuth onboarding="incomplete" />}>
         <Route path="/onboarding" element={<OnboardingPage />} />
@@ -30,6 +35,16 @@ export default function App() {
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/mypage" element={<MyPage />} />
+          <Route path="/mypage/history" element={<RunningHistoryPage />} />
+          <Route path="/mypage/history/all" element={<CompletedRunsPage />} />
+          <Route path="/mypage/bookmarks" element={<BookmarksPage />} />
+          <Route path="/mypage/reports" element={<ReportsPage />} />
+          <Route path="/mypage/trips" element={<TripsPage />} />
+          <Route path="/mypage/trips/new" element={<TripCreatePage />} />
+          <Route path="/mypage/settings" element={<SettingsPage />} />
+          <Route path="/mypage/settings/account" element={<AccountPage />} />
+          <Route path="/mypage/settings/profile" element={<ProfileEditPage />} />
+          <Route path="/mypage/settings/notifications" element={<NotificationPage />} />
           <Route path="/running" element={<RunningSelectPage />} />
         </Route>
         <Route path="/running/free" element={<FreeRunReadyPage />} />

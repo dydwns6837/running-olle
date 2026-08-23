@@ -104,7 +104,8 @@ public class OpenRouteServiceClient {
                 elevationGainM,
                 surfaceBreakdown,
                 parsedGeometry.routeLineString(),
-                wktWriter.write(parsedGeometry.routeLineString())
+                wktWriter.write(parsedGeometry.routeLineString()),
+                parseSegmentDistanceKm(propertiesMap)
         );
     }
 
@@ -187,6 +188,21 @@ public class OpenRouteServiceClient {
                 round(surfaceDistance.dirtMeters / totalDistanceMeters * 100.0),
                 round(surfaceDistance.stairsMeters / totalDistanceMeters * 100.0)
         );
+    }
+
+    private static List<Double> parseSegmentDistanceKm(Map<String, Object> propertiesMap) {
+        Object segmentsValue = propertiesMap.get("segments");
+        if (!(segmentsValue instanceof List<?> segments)) {
+            return List.of();
+        }
+
+        return segments.stream()
+                .filter(Map.class::isInstance)
+                .map(OpenRouteServiceClient::toStringObjectMap)
+                .map(segment -> readDouble(segment.get("distance")))
+                .filter(distanceMeters -> distanceMeters != null && distanceMeters >= 0)
+                .map(distanceMeters -> round(distanceMeters / 1000.0))
+                .toList();
     }
 
     private static void accumulateSurfaceSummary(Object extraInfoValue, SurfaceDistance surfaceDistance) {
@@ -320,7 +336,8 @@ public class OpenRouteServiceClient {
             double elevationGainM,
             SurfaceBreakdown surface,
             LineString routeLineString,
-            String routeLineStringWkt
+            String routeLineStringWkt,
+            List<Double> segmentDistanceKm
     ) {
     }
 

@@ -2,8 +2,8 @@ package com.runningolle.domain.course.entity;
 
 import com.runningolle.domain.course.enums.CourseType;
 import com.runningolle.domain.course.enums.Difficulty;
-import com.runningolle.global.entity.BaseTimeEntity;
 import com.runningolle.domain.user.entity.User;
+import com.runningolle.global.entity.BaseTimeEntity;
 import jakarta.persistence.Access;
 import jakarta.persistence.AccessType;
 import jakarta.persistence.Column;
@@ -108,4 +108,40 @@ public class Course extends BaseTimeEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public static Course create(
+            User creator,
+            String name,
+            String description,
+            CourseType courseType,
+            BigDecimal distanceKm,
+            Integer estimatedDurationMinutes,
+            BigDecimal elevationGainM,
+            Difficulty difficulty,
+            BigDecimal surfaceAsphaltPct,
+            BigDecimal surfaceDirtPct,
+            BigDecimal surfaceStairsPct,
+            LineString route,
+            Point startPoint,
+            String thumbnailImageUrl,
+            boolean isPublic
+    ) {
+        Course course = new Course();
+        course.creator = creator;
+        course.name = name;
+        course.description = description;
+        course.courseType = courseType;
+        course.distanceKm = distanceKm;
+        course.estimatedDurationMinutes = estimatedDurationMinutes;
+        course.elevationGainM = elevationGainM;
+        course.difficulty = difficulty;
+        course.surfaceAsphaltPct = surfaceAsphaltPct;
+        course.surfaceDirtPct = surfaceDirtPct;
+        course.surfaceStairsPct = surfaceStairsPct;
+        course.route = route;
+        course.startPoint = startPoint;
+        course.thumbnailImageUrl = thumbnailImageUrl;
+        course.isPublic = isPublic;
+        return course;
+    }
 }

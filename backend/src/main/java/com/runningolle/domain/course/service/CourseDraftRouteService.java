@@ -2,7 +2,6 @@ package com.runningolle.domain.course.service;
 
 import com.runningolle.domain.course.dto.CourseDraftRouteRequest;
 import com.runningolle.domain.course.dto.CourseDraftRouteResponse;
-import com.runningolle.domain.course.enums.Difficulty;
 import com.runningolle.domain.routing.client.OpenRouteServiceClient;
 import com.runningolle.domain.routing.client.OpenRouteServiceClient.OrsRouteResult;
 import com.runningolle.domain.routing.client.OpenRouteServiceClient.Waypoint;
@@ -17,16 +16,16 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class CourseDraftRouteService {
 
-    private static final double LOW_DIFFICULTY_ELEVATION_GAIN_PER_KM = 10.0;
-    private static final double MID_DIFFICULTY_ELEVATION_GAIN_PER_KM = 30.0;
-
     private final OpenRouteServiceClient openRouteServiceClient;
 
     public CourseDraftRouteResponse calculateDraftRoute(CourseDraftRouteRequest request) {
         List<Waypoint> waypoints = toRoutingWaypoints(request);
         OrsRouteResult routeResult = openRouteServiceClient.calculateFootWalkingRoute(waypoints);
 
-        return CourseDraftRouteResponse.from(routeResult, suggestDifficulty(routeResult));
+        return CourseDraftRouteResponse.from(
+                routeResult,
+                CourseDifficultyCalculator.suggest(routeResult.distanceKm(), routeResult.elevationGainM())
+        );
     }
 
     private List<Waypoint> toRoutingWaypoints(CourseDraftRouteRequest request) {
@@ -44,18 +43,4 @@ public class CourseDraftRouteService {
                 .toList();
     }
 
-    private Difficulty suggestDifficulty(OrsRouteResult routeResult) {
-        if (routeResult.distanceKm() <= 0) {
-            return Difficulty.LOW;
-        }
-
-        double elevationGainPerKm = routeResult.elevationGainM() / routeResult.distanceKm();
-        if (elevationGainPerKm < LOW_DIFFICULTY_ELEVATION_GAIN_PER_KM) {
-            return Difficulty.LOW;
-        }
-        if (elevationGainPerKm < MID_DIFFICULTY_ELEVATION_GAIN_PER_KM) {
-            return Difficulty.MID;
-        }
-        return Difficulty.HIGH;
-    }
 }

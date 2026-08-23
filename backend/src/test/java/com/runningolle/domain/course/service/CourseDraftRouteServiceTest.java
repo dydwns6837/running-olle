@@ -141,7 +141,8 @@ class CourseDraftRouteServiceTest {
                 elevationGainM,
                 surfaceBreakdown,
                 lineString,
-                "LINESTRING (126.5311884 33.4996213, 126.5119574 33.5161104)"
+                "LINESTRING (126.5311884 33.4996213, 126.5119574 33.5161104)",
+                List.of(distanceKm)
         );
     }
 }

@@ -129,4 +129,18 @@ public class User extends BaseTimeEntity {
         this.accountStatus = AccountStatus.WITHDRAWN;
         this.withdrawnAt = LocalDateTime.now();
     }
+
+    public void updateProfile(
+            String nickname,
+            String profileImageUrl,
+            String bio,
+            PreferredDistance preferredDistance,
+            PreferredDifficulty preferredDifficulty
+    ) {
+        this.nickname = nickname;
+        this.profileImageUrl = profileImageUrl;
+        this.bio = bio;
+        this.preferredDistance = preferredDistance;
+        this.preferredDifficulty = preferredDifficulty;
+    }
 }

@@ -52,4 +52,15 @@ public class Trip extends BaseTimeEntity {
 
     @Column(name = "thumbnail_image_url", columnDefinition = "text")
     private String thumbnailImageUrl;
+
+    public static Trip create(User user, String name, String region, LocalDate startDate, LocalDate endDate, String thumbnailImageUrl) {
+        Trip trip = new Trip();
+        trip.user = user;
+        trip.name = name;
+        trip.region = region;
+        trip.startDate = startDate;
+        trip.endDate = endDate;
+        trip.thumbnailImageUrl = thumbnailImageUrl;
+        return trip;
+    }
 }

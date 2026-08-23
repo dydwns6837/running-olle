@@ -103,4 +103,8 @@ public class RunningRecord extends BaseCreatedAtEntity {
         record.endedAt = endedAt;
         return record;
     }
+
+    public void assignToTrip(Trip trip) {
+        this.trip = trip;
+    }
 }

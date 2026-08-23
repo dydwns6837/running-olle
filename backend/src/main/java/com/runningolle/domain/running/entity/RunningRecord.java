@@ -80,4 +80,31 @@ public class RunningRecord extends BaseCreatedAtEntity {
 
     @Column(name = "ended_at", nullable = false)
     private LocalDateTime endedAt;
+
+    public static RunningRecord createFreeRun(
+            User user,
+            LineString route,
+            BigDecimal totalDistanceKm,
+            int totalDurationSeconds,
+            BigDecimal averagePace,
+            BigDecimal calories,
+            LocalDateTime startedAt,
+            LocalDateTime endedAt
+    ) {
+        RunningRecord record = new RunningRecord();
+        record.user = user;
+        record.runningMode = RunningMode.FREE_RUN;
+        record.route = route;
+        record.totalDistanceKm = totalDistanceKm;
+        record.totalDurationSeconds = totalDurationSeconds;
+        record.avgPace = averagePace;
+        record.calories = calories;
+        record.startedAt = startedAt;
+        record.endedAt = endedAt;
+        return record;
+    }
+
+    public void assignToTrip(Trip trip) {
+        this.trip = trip;
+    }
 }

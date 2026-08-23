@@ -1,0 +1,104 @@
+import { useEffect, useRef, useState } from 'react'
+import { JEJU_FALLBACK_POSITION } from './runningUtils'
+import type { GeoPoint } from './types'
+
+let kakaoMapLoader: Promise<void> | null = null
+
+function loadKakaoMapSdk(appKey: string) {
+  if (window.kakao?.maps) return Promise.resolve()
+  if (kakaoMapLoader) return kakaoMapLoader
+  kakaoMapLoader = new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`
+    script.async = true
+    script.onload = () => window.kakao?.maps
+      ? window.kakao.maps.load(resolve)
+      : reject(new Error('카카오맵 SDK를 불러오지 못했어요.'))
+    script.onerror = () => reject(new Error('카카오맵 연결에 실패했어요.'))
+    document.head.appendChild(script)
+  })
+  return kakaoMapLoader
+}
+
+type Props = {
+  currentPosition: GeoPoint | null
+  recordedPath?: GeoPoint[]
+  followPosition?: boolean
+  className?: string
+}
+
+export function FreeRunningMap({ currentPosition, recordedPath = [], followPosition = true, className = '' }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<any>(null)
+  const markerRef = useRef<any>(null)
+  const accuracyRef = useRef<any>(null)
+  const routeRef = useRef<any>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [ready, setReady] = useState(false)
+  const appKey = import.meta.env.VITE_KAKAO_MAP_APP_KEY || import.meta.env.VITE_MAP_API_KEY
+
+  useEffect(() => {
+    if (!containerRef.current || !appKey) return
+    let disposed = false
+    loadKakaoMapSdk(appKey).then(() => {
+      if (disposed || !containerRef.current || !window.kakao) return
+      const maps = window.kakao.maps
+      const center = currentPosition ?? JEJU_FALLBACK_POSITION
+      const map = new maps.Map(containerRef.current, {
+        center: new maps.LatLng(center.latitude, center.longitude),
+        level: 4,
+      })
+      routeRef.current = new maps.Polyline({
+        map,
+        path: [],
+        strokeWeight: 6,
+        strokeColor: '#FF6F0F',
+        strokeOpacity: 0.95,
+        strokeStyle: 'solid',
+      })
+      mapRef.current = map
+      setReady(true)
+      window.setTimeout(() => map.relayout(), 0)
+    }).catch((reason: Error) => setError(reason.message))
+    return () => { disposed = true }
+  // The map instance is intentionally created only once per mounted screen.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appKey])
+
+  useEffect(() => {
+    if (!ready || !mapRef.current || !window.kakao || !currentPosition) return
+    const maps = window.kakao.maps
+    const position = new maps.LatLng(currentPosition.latitude, currentPosition.longitude)
+    if (!markerRef.current) {
+      markerRef.current = new maps.CustomOverlay({
+        map: mapRef.current,
+        position,
+        content: '<div class="running-current-marker"><span></span></div>',
+        zIndex: 10,
+      })
+      accuracyRef.current = new maps.Circle({
+        map: mapRef.current,
+        center: position,
+        radius: currentPosition.accuracy ?? 0,
+        strokeWeight: 1,
+        strokeColor: '#2F80ED',
+        strokeOpacity: 0.35,
+        fillColor: '#71A7F7',
+        fillOpacity: 0.18,
+      })
+    } else {
+      markerRef.current.setPosition(position)
+      accuracyRef.current.setPosition(position)
+      accuracyRef.current.setRadius(currentPosition.accuracy ?? 0)
+    }
+    if (followPosition) mapRef.current.panTo(position)
+  }, [currentPosition, followPosition, ready])
+
+  useEffect(() => {
+    if (!ready || !routeRef.current || !window.kakao) return
+    routeRef.current.setPath(recordedPath.map((point) => new window.kakao!.maps.LatLng(point.latitude, point.longitude)))
+  }, [ready, recordedPath])
+
+  if (!appKey) return <div className={`running-map-fallback ${className}`}>카카오맵 API 키를 설정해 주세요.</div>
+  return <div className={`running-map ${className}`}><div ref={containerRef} className="running-map-canvas" />{error && <div className="running-map-fallback">{error}<br />JavaScript 키와 등록 도메인을 확인해 주세요.</div>}</div>
+}

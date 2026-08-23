@@ -91,4 +91,22 @@ public class UserNotificationSetting {
         setting.commentLike = commentLike;
         return setting;
     }
+
+    public void update(
+            boolean recommendedCourse,
+            boolean weather,
+            boolean savedCourseUpdate,
+            boolean meetupInvite,
+            boolean commentLike,
+            boolean tierChange,
+            boolean eventChallenge
+    ) {
+        this.recommendedCourse = recommendedCourse;
+        this.weather = weather;
+        this.savedCourseUpdate = savedCourseUpdate;
+        this.meetupInvite = meetupInvite;
+        this.commentLike = commentLike;
+        this.tierChange = tierChange;
+        this.eventChallenge = eventChallenge;
+    }
 }

@@ -42,4 +42,5 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty 'runningolle.external-smoke', System.getProperty('runningolle.external-smoke')
 }

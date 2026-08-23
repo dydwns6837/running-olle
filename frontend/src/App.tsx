@@ -6,6 +6,9 @@ import { LoginPage } from './pages/Auth/LoginPage'
 import { OAuthCallbackPage } from './pages/Auth/OAuthCallbackPage'
 import { OnboardingPage } from './pages/Auth/OnboardingPage'
 import { CommunityPage } from './pages/Community/CommunityPage'
+import { CourseBuilderPage } from './pages/Courses/CourseBuilderPage'
+import { CourseDetailPage } from './pages/Courses/CourseDetailPage'
+import { CourseSaveDetailPage } from './pages/Courses/CourseSaveDetailPage'
 import { CoursesPage } from './pages/Courses/CoursesPage'
 import { HomePage } from './pages/Home/HomePage'
 import { AccountPage, BookmarksPage, CompletedRunsPage, MyPage, NotificationPage, ProfileEditPage, ReportsPage, RunningHistoryPage, SettingsPage, TripCreatePage, TripsPage } from './pages/MyPage/MyPage'
@@ -33,6 +36,7 @@ export default function App() {
         <Route element={<AppLayout leftSlot={<span>📍 {user.location}</span>} />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/courses/:courseId" element={<CourseDetailPage />} />
           <Route path="/community" element={<CommunityPage />} />
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/mypage/history" element={<RunningHistoryPage />} />
@@ -47,6 +51,8 @@ export default function App() {
           <Route path="/mypage/settings/notifications" element={<NotificationPage />} />
           <Route path="/running" element={<RunningSelectPage />} />
         </Route>
+        <Route path="/courses/create" element={<CourseBuilderPage />} />
+        <Route path="/courses/create/save" element={<CourseSaveDetailPage />} />
         <Route path="/running/free" element={<FreeRunReadyPage />} />
         <Route path="/running/live" element={<LiveRunningPage />} />
         <Route path="/running/complete" element={<RunningCompletePage />} />

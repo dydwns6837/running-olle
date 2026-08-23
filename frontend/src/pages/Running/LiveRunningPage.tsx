@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { CourseRouteMap } from '../../features/course/CourseRouteMap'
+import { courseService } from '../../features/course/courseService'
+import type { CourseDetail } from '../../features/course/types'
 import { FreeRunningMap } from '../../features/running/FreeRunningMap'
 import { RunningIcon } from '../../features/running/RunningIcon'
 import { saveRunningRecord } from '../../features/running/runningRecordService'
@@ -10,11 +13,20 @@ const MIN_SEGMENT_METERS = 3
 const MAX_SEGMENT_METERS = 200
 const MAX_ACCURACY_METERS = 80
 
+type RunningNavigationState = {
+  startPosition?: GeoPoint
+  courseId?: string
+  courseName?: string
+}
+
 export function LiveRunningPage() {
   const navigate = useNavigate()
-  const startPosition = useLocation().state?.startPosition as GeoPoint | undefined
+  const location = useLocation()
+  const navigationState = readRunningNavigationState(location.state as unknown)
+  const startPosition = navigationState?.startPosition
   const [phase, setPhase] = useState<RunningPhase>('running')
   const [position, setPosition] = useState<GeoPoint | null>(startPosition ?? null)
+  const [courseDetail, setCourseDetail] = useState<CourseDetail | null>(null)
   const [route, setRoute] = useState<GeoPoint[]>(startPosition ? [startPosition] : [])
   const [distanceMeters, setDistanceMeters] = useState(0)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
@@ -28,6 +40,24 @@ export function LiveRunningPage() {
   const activeElapsedMsRef = useRef(0)
   const phaseStartedAtRef = useRef(Date.now())
   const cameraInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!navigationState?.courseId) {
+      setCourseDetail(null)
+      return
+    }
+    let ignore = false
+    courseService.getCourse(navigationState.courseId)
+      .then((detail) => {
+        if (!ignore) setCourseDetail(detail)
+      })
+      .catch(() => {
+        if (!ignore) setCourseDetail(null)
+      })
+    return () => {
+      ignore = true
+    }
+  }, [navigationState?.courseId])
 
   useEffect(() => {
     if (phase !== 'running') return
@@ -102,7 +132,17 @@ export function LiveRunningPage() {
 
   return (
     <main className="live-running-page">
-      <FreeRunningMap currentPosition={position} recordedPath={route} />
+      {courseDetail ? (
+        <CourseRouteMap
+          routeCoordinates={courseDetail.routeCoordinates}
+          waypoints={courseDetail.waypoints}
+          currentPosition={position ? { lat: position.latitude, lng: position.longitude } : null}
+          recordedPath={route.map(({ latitude, longitude }) => ({ lat: latitude, lng: longitude }))}
+          className="running-map"
+        />
+      ) : (
+        <FreeRunningMap currentPosition={position} recordedPath={route} />
+      )}
       <section className="live-stat-panel">
         <div><strong>{formatDistance(distanceMeters)}</strong><span>km</span></div>
         <div><strong>{formatDuration(elapsedSeconds)}</strong><span>시간</span></div>
@@ -137,6 +177,21 @@ export function LiveRunningPage() {
       )}
     </main>
   )
+}
+
+function readRunningNavigationState(value: unknown): RunningNavigationState | null {
+  if (!value || typeof value !== 'object') return null
+  const state = value as Record<string, unknown>
+  const startPosition = isGeoPoint(state.startPosition) ? state.startPosition : undefined
+  const courseId = typeof state.courseId === 'string' ? state.courseId : undefined
+  const courseName = typeof state.courseName === 'string' ? state.courseName : undefined
+  return { startPosition, courseId, courseName }
+}
+
+function isGeoPoint(value: unknown): value is GeoPoint {
+  if (!value || typeof value !== 'object') return false
+  const point = value as Record<string, unknown>
+  return typeof point.latitude === 'number' && typeof point.longitude === 'number'
 }
 
 function ScreenLock({ onUnlock }: { onUnlock: () => void }) {

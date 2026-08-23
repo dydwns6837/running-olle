@@ -42,4 +42,11 @@ public class CourseTagMap {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "course_tag_id", nullable = false)
     private CourseTag courseTag;
+
+    public static CourseTagMap of(Course course, CourseTag courseTag) {
+        CourseTagMap courseTagMap = new CourseTagMap();
+        courseTagMap.course = course;
+        courseTagMap.courseTag = courseTag;
+        return courseTagMap;
+    }
 }

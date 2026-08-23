@@ -68,4 +68,32 @@ public class CourseWaypoint {
 
     @Column(name = "tour_synced_at")
     private LocalDateTime tourSyncedAt;
+
+    public static CourseWaypoint create(
+            Course course,
+            String name,
+            String kakaoPlaceId,
+            Point location,
+            Integer orderIndex,
+            BigDecimal distanceFromStartKm,
+            String description,
+            String tourContentId,
+            String tourContentTypeId,
+            JsonNode tourData,
+            LocalDateTime tourSyncedAt
+    ) {
+        CourseWaypoint waypoint = new CourseWaypoint();
+        waypoint.course = course;
+        waypoint.name = name;
+        waypoint.kakaoPlaceId = kakaoPlaceId;
+        waypoint.location = location;
+        waypoint.orderIndex = orderIndex;
+        waypoint.distanceFromStartKm = distanceFromStartKm;
+        waypoint.description = description;
+        waypoint.tourContentId = tourContentId;
+        waypoint.tourContentTypeId = tourContentTypeId;
+        waypoint.tourData = tourData;
+        waypoint.tourSyncedAt = tourSyncedAt;
+        return waypoint;
+    }
 }

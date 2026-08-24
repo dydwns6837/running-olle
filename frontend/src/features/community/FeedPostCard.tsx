@@ -116,7 +116,7 @@ export function FeedPostCard({ post, onChange, onEdit, onOpenDetail }: FeedPostC
             </button>
           </div>
         ) : (
-          <span className="text-[18px] leading-none text-[#C8A99A]">···</span>
+          <span className="text-[18px] leading-none text-[#C8A99A]">⋯</span>
         )}
       </div>
 
@@ -129,20 +129,18 @@ export function FeedPostCard({ post, onChange, onEdit, onOpenDetail }: FeedPostC
           }`}
         >
           <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] text-[16px]"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[9px] text-[16px] text-white"
             style={{
               background: post.course?.courseType === 'SPOT_COURSE' ? '#34C759' : '#FF6F0F',
             }}
           >
-            {post.course?.courseType === 'SPOT_COURSE' ? '🌊' : '🏃'}
+            {post.course?.courseType === 'SPOT_COURSE' ? 'S' : 'R'}
           </div>
           <div className="min-w-0">
-            <div className="truncate text-[13px] font-bold text-[#261912]">
-              {post.course?.name ?? '러닝 기록'}
-            </div>
+            <div className="truncate text-[13px] font-bold text-[#261912]">{post.course?.name ?? '러닝 기록'}</div>
             <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[#594136]">
-              <span>📏 {post.runningRecord.distanceKm.toFixed(2)}km</span>
-              <span>⏱ {formatDuration(post.runningRecord.durationSeconds)}</span>
+              <span>거리 {post.runningRecord.distanceKm.toFixed(2)}km</span>
+              <span>시간 {formatDuration(post.runningRecord.durationSeconds)}</span>
               <span>{formatPace(post.runningRecord.distanceKm, post.runningRecord.durationSeconds)}</span>
             </div>
           </div>
@@ -179,16 +177,16 @@ export function FeedPostCard({ post, onChange, onEdit, onOpenDetail }: FeedPostC
           onClick={handleLike}
           className={`flex items-center gap-1 ${post.likedByMe ? 'text-[#FF3B30]' : ''}`}
         >
-          <span>{post.likedByMe ? '❤️' : '🤍'}</span>
+          <span>{post.likedByMe ? '♥' : '♡'}</span>
           <span>{post.likeCount}</span>
         </button>
         <button type="button" onClick={() => onOpenDetail(post)} className="flex items-center gap-1">
-          <span>💬</span>
+          <span>댓글</span>
           <span>{post.commentCount}</span>
         </button>
         {post.course ? (
           <button type="button" onClick={() => onOpenDetail(post)} className="ml-auto text-[12px] font-bold text-[#FF6F0F]">
-            🔗 이 코스 보기
+            태그 코스 보기
           </button>
         ) : null}
       </div>
@@ -229,7 +227,7 @@ export function FeedPostCard({ post, onChange, onEdit, onOpenDetail }: FeedPostC
         <input
           value={comment}
           onChange={(event) => setComment(event.target.value)}
-          placeholder="댓글을 입력하세요"
+          placeholder="댓글을 입력해 주세요."
           className="h-11 flex-1 rounded-full border border-[#E1BFB1] bg-[#FFF8F6] px-4 text-[13px] text-[#261912] outline-none"
         />
         <button

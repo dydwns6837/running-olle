@@ -8,13 +8,13 @@ export function formatDuration(seconds: number) {
 
 export function formatPace(distanceKm: number, durationSeconds: number) {
   if (!distanceKm) {
-    return '⚡ 페이스 없음'
+    return '페이스 정보 없음'
   }
 
   const paceSeconds = Math.round(durationSeconds / distanceKm)
   const paceMinutes = Math.floor(paceSeconds / 60)
   const remainSeconds = paceSeconds % 60
-  return `⚡ ${paceMinutes}'${String(remainSeconds).padStart(2, '0')}"`
+  return `페이스 ${paceMinutes}'${String(remainSeconds).padStart(2, '0')}"`
 }
 
 export function formatRelativeTime(value: string) {

@@ -8,9 +8,9 @@ type NavigationItem = {
 
 const navigationItems: NavigationItem[] = [
   { label: '홈', path: '/', icon: '⌂' },
-  { label: '코스', path: '/courses', icon: '◇' },
-  { label: '커뮤니티', path: '/community', icon: '♙' },
-  { label: '마이', path: '/mypage', icon: '♙' },
+  { label: '코스', path: '/courses', icon: '⌘' },
+  { label: '커뮤니티', path: '/community', icon: '◌' },
+  { label: '마이', path: '/mypage', icon: '◐' },
 ]
 
 function getIsActive(currentPath: string, itemPath: string) {
@@ -35,7 +35,7 @@ export function BottomNavigation() {
               }`}
               aria-label={item.label}
             >
-              <span className="text-[28px] leading-none">{item.icon}</span>
+              <span className="text-[22px] leading-none">{item.icon}</span>
               <span>{item.label}</span>
             </NavLink>
           )
@@ -43,10 +43,11 @@ export function BottomNavigation() {
 
         <button
           type="button"
-          className="-mt-8 mx-auto flex h-[62px] w-16 items-center justify-center rounded-full bg-[linear-gradient(135deg,#FF6F0F_0%,#FD934C_100%)] text-[34px] leading-none text-white drop-shadow-[0px_4px_6px_rgba(0,0,0,0.2)]"
+          className="-mt-8 mx-auto flex h-[62px] w-16 flex-col items-center justify-center rounded-full bg-[linear-gradient(135deg,#FF6F0F_0%,#FD934C_100%)] text-white drop-shadow-[0px_4px_6px_rgba(0,0,0,0.2)]"
           aria-label="러닝 시작"
         >
-          ♟
+          <span className="text-[28px] leading-none">●</span>
+          <span className="mt-0.5 text-[10px] font-bold">러닝</span>
         </button>
 
         {navigationItems.slice(2).map((item) => {
@@ -61,7 +62,7 @@ export function BottomNavigation() {
               }`}
               aria-label={item.label}
             >
-              <span className="text-[28px] leading-none">{item.icon}</span>
+              <span className="text-[22px] leading-none">{item.icon}</span>
               <span>{item.label}</span>
             </NavLink>
           )

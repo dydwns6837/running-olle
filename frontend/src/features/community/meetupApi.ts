@@ -30,7 +30,7 @@ type MeetupApiResponse = {
     name: string
     distanceKm: number
     durationMinutes: number
-    difficulty: 'LOW' | 'MEDIUM' | 'HIGH'
+    difficulty: 'LOW' | 'MID' | 'HIGH'
     courseType: 'RUNNING_COURSE' | 'SPOT_COURSE'
   }
   participantIds: string[]
@@ -231,11 +231,11 @@ function themeToLabel(theme: MeetupTheme) {
   }
 }
 
-function mapDifficulty(value: 'LOW' | 'MEDIUM' | 'HIGH') {
+function mapDifficulty(value: 'LOW' | 'MID' | 'HIGH') {
   switch (value) {
     case 'LOW':
       return '쉬움'
-    case 'MEDIUM':
+    case 'MID':
       return '보통'
     case 'HIGH':
       return '어려움'

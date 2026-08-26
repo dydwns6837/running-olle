@@ -90,7 +90,7 @@ public class MeetupService {
     @Transactional
     public MeetupResponse createMeetup(UUID userId, MeetupCreateRequest request) {
         User organizer = getUser(userId);
-        Course course = getCourse(request.courseId());
+        Course course = getCourse(request.courseId(), userId);
         Point meetingPoint = GEOMETRY_FACTORY.createPoint(
                 new Coordinate(request.longitude().doubleValue(), request.latitude().doubleValue())
         );
@@ -127,7 +127,7 @@ public class MeetupService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Completed meetup cannot be edited.");
         }
 
-        Course course = getCourse(request.courseId());
+        Course course = getCourse(request.courseId(), userId);
         Point meetingPoint = GEOMETRY_FACTORY.createPoint(
                 new Coordinate(request.longitude().doubleValue(), request.latitude().doubleValue())
         );
@@ -443,11 +443,15 @@ public class MeetupService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found."));
     }
 
-    private Course getCourse(UUID courseId) {
+    private Course getCourse(UUID courseId, UUID userId) {
         if (courseId == null) {
             return null;
         }
-        return courseRepository.findByIdAndIsDeletedFalse(courseId)
+        Course course = courseRepository.findByIdAndIsDeletedFalse(courseId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Course not found."));
+        if (!Boolean.TRUE.equals(course.getIsPublic()) && !course.getCreator().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Course not found.");
+        }
+        return course;
     }
 }

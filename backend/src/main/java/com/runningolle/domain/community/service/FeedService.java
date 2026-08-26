@@ -86,7 +86,7 @@ public class FeedService {
     public FeedPostResponse createPost(UUID userId, FeedPostCreateRequest request) {
         User user = getUser(userId);
         RunningRecord runningRecord = getRunningRecord(request.runningRecordId(), userId);
-        Course course = getCourse(request.courseId());
+        Course course = getCourse(request.courseId(), userId);
 
         FeedPost feedPost = feedPostRepository.save(FeedPost.create(
                 user,
@@ -119,7 +119,7 @@ public class FeedService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "본인 게시글만 수정할 수 있습니다.");
         }
 
-        Course course = getCourse(request.courseId());
+        Course course = getCourse(request.courseId(), userId);
         feedPost.update(
                 course,
                 request.content().trim(),
@@ -266,11 +266,15 @@ public class FeedService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "연결할 러닝 기록이 올바르지 않습니다."));
     }
 
-    private Course getCourse(UUID courseId) {
+    private Course getCourse(UUID courseId, UUID userId) {
         if (courseId == null) {
             return null;
         }
-        return courseRepository.findByIdAndIsDeletedFalse(courseId)
+        Course course = courseRepository.findByIdAndIsDeletedFalse(courseId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "연결할 코스를 찾을 수 없습니다."));
+        if (!Boolean.TRUE.equals(course.getIsPublic()) && !course.getCreator().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "연결할 코스를 찾을 수 없습니다.");
+        }
+        return course;
     }
 }

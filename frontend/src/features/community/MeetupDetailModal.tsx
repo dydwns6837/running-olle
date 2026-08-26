@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { KakaoPointMap } from '../map/KakaoPointMap'
 import type { Meetup, ParticipationStatus } from './communityTypes'
 
 export function MeetupDetailModal({
@@ -108,9 +109,14 @@ export function MeetupDetailModal({
             </div>
           </div>
 
-          <div className="mx-5 mt-4 rounded-[16px] bg-[#F7DDD3] px-4 py-6 text-center text-[13px] font-semibold text-[#594136]">
-            지도 미리보기 영역
-            <div className="mt-1 text-[12px] font-normal text-[#8D7164]">
+          <div className="mx-5 mt-4 overflow-hidden rounded-[16px] bg-[#F7DDD3]">
+            <KakaoPointMap
+              lat={meetup.meetingLatitude}
+              lng={meetup.meetingLongitude}
+              label={meetup.locationLabel}
+              className="h-[180px]"
+            />
+            <div className="px-4 py-3 text-[12px] font-normal text-[#8D7164]">
               {meetup.locationLabel} · {meetup.meetingLatitude.toFixed(4)}, {meetup.meetingLongitude.toFixed(4)}
             </div>
           </div>

@@ -37,4 +37,12 @@ public class FeedPostImage {
 
     @Column(name = "order_index", nullable = false)
     private Integer orderIndex;
+
+    public static FeedPostImage create(FeedPost feedPost, String imageUrl, int orderIndex) {
+        FeedPostImage image = new FeedPostImage();
+        image.feedPost = feedPost;
+        image.imageUrl = imageUrl;
+        image.orderIndex = orderIndex;
+        return image;
+    }
 }

@@ -19,6 +19,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.math.RoundingMode;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -36,6 +37,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @EntityListeners(AuditingEntityListener.class)
 @Access(AccessType.FIELD)
 public class Meetup extends BaseTimeEntity {
+
+    private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -86,4 +89,80 @@ public class Meetup extends BaseTimeEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public static Meetup create(
+            User organizer,
+            Course course,
+            String title,
+            String description,
+            LocalDateTime meetupDate,
+            Integer maxParticipants,
+            BigDecimal targetPace,
+            String meetingPlace,
+            Point meetingPoint,
+            JoinMethod joinMethod
+    ) {
+        Meetup meetup = new Meetup();
+        meetup.organizer = organizer;
+        meetup.course = course;
+        meetup.title = title;
+        meetup.description = description;
+        meetup.meetupDate = meetupDate;
+        meetup.maxParticipants = maxParticipants;
+        meetup.targetPace = targetPace == null ? ZERO : targetPace.setScale(2, RoundingMode.HALF_UP);
+        meetup.meetingPlace = meetingPlace;
+        meetup.meetingPoint = meetingPoint;
+        meetup.joinMethod = joinMethod;
+        meetup.status = MeetupStatus.RECRUITING;
+        return meetup;
+    }
+
+    public void closeWhenFull(int acceptedCount) {
+        if (acceptedCount >= maxParticipants) {
+            this.status = MeetupStatus.CLOSED;
+        } else if (this.status == MeetupStatus.CLOSED) {
+            this.status = MeetupStatus.RECRUITING;
+        }
+    }
+
+    public void refreshStatus(LocalDateTime now, int acceptedCount) {
+        if (this.status == MeetupStatus.CANCELLED) {
+            return;
+        }
+
+        if (!meetupDate.isAfter(now)) {
+            this.status = MeetupStatus.COMPLETED;
+            return;
+        }
+
+        this.status = acceptedCount >= maxParticipants ? MeetupStatus.CLOSED : MeetupStatus.RECRUITING;
+    }
+
+    public void update(
+            Course course,
+            String title,
+            String description,
+            LocalDateTime meetupDate,
+            Integer maxParticipants,
+            BigDecimal targetPace,
+            String meetingPlace,
+            Point meetingPoint,
+            JoinMethod joinMethod
+    ) {
+        this.course = course;
+        this.title = title;
+        this.description = description;
+        this.meetupDate = meetupDate;
+        this.maxParticipants = maxParticipants;
+        this.targetPace = targetPace == null ? ZERO : targetPace.setScale(2, RoundingMode.HALF_UP);
+        this.meetingPlace = meetingPlace;
+        this.meetingPoint = meetingPoint;
+        this.joinMethod = joinMethod;
+    }
+
+    public void delete() {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+        this.status = MeetupStatus.CANCELLED;
+    }
 }

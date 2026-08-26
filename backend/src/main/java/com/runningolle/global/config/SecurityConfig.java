@@ -56,6 +56,8 @@ public class SecurityConfig {
                             "/",
                             "/error",
                             "/favicon.ico",
+                            "/uploads/**",
+                            "/ws/**",
                             "/h2-console/**",
                             "/api/login/**",
                             "/api/oauth2/**",

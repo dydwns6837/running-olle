@@ -3,12 +3,16 @@ package com.runningolle.domain.course.repository;
 import com.runningolle.domain.course.entity.Course;
 import com.runningolle.domain.course.enums.CourseType;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface CourseRepository extends JpaRepository<Course, UUID> {
+
+    Optional<Course> findByIdAndIsDeletedFalse(UUID id);
+    List<Course> findTop10ByIsDeletedFalseAndIsPublicTrueOrderByCreatedAtDesc();
 
     @Query("""
             select distinct c

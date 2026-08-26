@@ -18,6 +18,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -26,7 +27,13 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Getter
 @Entity
-@Table(name = "chat_rooms")
+@Table(
+        name = "chat_rooms",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_chat_rooms_inquiry_room_scope",
+                columnNames = {"meetup_id", "organizer_id", "inquirer_id", "room_type"}
+        )
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Access(AccessType.FIELD)
@@ -57,4 +64,21 @@ public class ChatRoom extends BaseCreatedAtEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inquirer_id")
     private User inquirer;
+
+    public static ChatRoom createMeetupGroup(Meetup meetup) {
+        ChatRoom chatRoom = new ChatRoom();
+        chatRoom.roomType = ChatRoomType.MEETUP_GROUP;
+        chatRoom.meetup = meetup;
+        chatRoom.organizer = meetup.getOrganizer();
+        return chatRoom;
+    }
+
+    public static ChatRoom createDirectInquiry(Meetup meetup, User organizer, User inquirer) {
+        ChatRoom chatRoom = new ChatRoom();
+        chatRoom.roomType = ChatRoomType.DIRECT_INQUIRY;
+        chatRoom.meetup = meetup;
+        chatRoom.organizer = organizer;
+        chatRoom.inquirer = inquirer;
+        return chatRoom;
+    }
 }

@@ -33,7 +33,7 @@ export default function App() {
       </Route>
 
       <Route element={<RequireAuth onboarding="required" />}>
-        <Route element={<AppLayout leftSlot={<span>📍 {user.location}</span>} />}>
+        <Route element={<AppLayout leftSlot={<span>{user.location}</span>} />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/courses" element={<CoursesPage />} />
           <Route path="/courses/:courseId" element={<CourseDetailPage />} />

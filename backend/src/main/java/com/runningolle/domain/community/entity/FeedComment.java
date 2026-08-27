@@ -52,4 +52,17 @@ public class FeedComment extends BaseCreatedAtEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public static FeedComment create(FeedPost feedPost, User user, String content) {
+        FeedComment feedComment = new FeedComment();
+        feedComment.feedPost = feedPost;
+        feedComment.user = user;
+        feedComment.content = content;
+        return feedComment;
+    }
+
+    public void delete() {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
 }

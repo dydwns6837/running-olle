@@ -33,4 +33,11 @@ public class Theme {
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
+
+    public static Theme create(String code, String name) {
+        Theme theme = new Theme();
+        theme.code = code;
+        theme.name = name;
+        return theme;
+    }
 }

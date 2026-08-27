@@ -9,9 +9,9 @@ type NavigationItem = {
 
 const navigationItems: NavigationItem[] = [
   { label: '홈', path: '/', icon: '⌂' },
-  { label: '코스', path: '/courses', icon: '◇' },
-  { label: '커뮤니티', path: '/community', icon: '♙' },
-  { label: '마이', path: '/mypage', icon: '♙' },
+  { label: '코스', path: '/courses', icon: '⌘' },
+  { label: '커뮤니티', path: '/community', icon: '◌' },
+  { label: '마이', path: '/mypage', icon: '◐' },
 ]
 
 function getIsActive(currentPath: string, itemPath: string) {
@@ -37,7 +37,7 @@ export function BottomNavigation() {
               }`}
               aria-label={item.label}
             >
-              <span className="text-[28px] leading-none">{item.icon}</span>
+              <span className="text-[22px] leading-none">{item.icon}</span>
               <span>{item.label}</span>
             </NavLink>
           )
@@ -64,7 +64,7 @@ export function BottomNavigation() {
               }`}
               aria-label={item.label}
             >
-              <span className="text-[28px] leading-none">{item.icon}</span>
+              <span className="text-[22px] leading-none">{item.icon}</span>
               <span>{item.label}</span>
             </NavLink>
           )

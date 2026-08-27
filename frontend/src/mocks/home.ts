@@ -49,11 +49,11 @@ export type RunningEvent = {
 export const user: HomeUser = {
   id: 'user-1',
   nickname: '러너제주',
-  location: '제주시 구좌읍',
+  location: '제주 제주시 구좌읍',
 }
 
 export const weather: Weather = {
-  headline: '오늘 달리기 좋아요 ✨',
+  headline: '오늘 달리기 좋습니다',
   temperatureCelsius: 23,
   condition: '맑음',
   windSpeedMeterPerSecond: 2,
@@ -64,18 +64,18 @@ export const recommendedCourses: RecommendedCourse[] = [
   {
     id: 'hamdeok-morning',
     title: '함덕 감성 모닝런',
-    category: '학팟',
+    category: '스팟',
     distanceKm: 3.2,
     estimatedMinutes: 25,
     rating: 4.6,
     ratingCount: 128,
     difficulty: 'easy',
-    location: '제주시 조천읍 함덕리',
+    location: '제주 조천읍 함덕리',
     imageTone: 'beach',
   },
   {
     id: 'seongsan-sunrise',
-    title: '성산 일출봉 바닷길',
+    title: '성산 일출봉 바다런',
     category: '오름',
     distanceKm: 6.5,
     estimatedMinutes: 42,
@@ -94,7 +94,7 @@ export const recommendedCourses: RecommendedCourse[] = [
     rating: 4.7,
     ratingCount: 84,
     difficulty: 'medium',
-    location: '제주시 조천읍 교래리',
+    location: '제주 조천읍 교래리',
     imageTone: 'forest',
   },
 ]
@@ -134,12 +134,12 @@ export const events: RunningEvent[] = [
     id: 'jeju-trail-jun',
     month: 'JUN',
     day: '22',
-    title: '제주 국제 트레일러닝',
+    title: '제주 국제 트레일런',
   },
   {
     id: 'jeju-citrus-jul',
     month: 'JUL',
     day: '05',
-    title: '제주 감귤 축제 달리기',
+    title: '제주 감귤 축제 러닝',
   },
 ]

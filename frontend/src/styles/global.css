@@ -325,7 +325,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .course-save-modal code { display: block; padding: 10px; border-radius: 11px; color: #594136; background: #f7f2ef; font-size: 11px; word-break: break-all; }
 .course-save-modal div { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
 .course-save-modal button { min-height: 48px; border-radius: 13px; color: #594136; background: #f7f2ef; font-size: 13px; font-weight: 900; }
-.course-save-modal button:last-child { color: #fff; background: #ff6f0f; }
+.course-save-modal button:first-child { grid-column: 1 / -1; color: #fff; background: #ff6f0f; }
 
 /* Course list */
 .course-library { display: grid; gap: 16px; color: #261912; }

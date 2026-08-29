@@ -27,7 +27,7 @@ public class RunningRecordController {
             Authentication authentication,
             @Valid @RequestBody CreateRunningRecordRequest request
     ) {
-        UUID id = runningRecordService.createFreeRun(UUID.fromString(authentication.getName()), request);
+        UUID id = runningRecordService.createRecord(UUID.fromString(authentication.getName()), request);
         return new CreateRunningRecordResponse(id);
     }
 }

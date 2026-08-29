@@ -1,8 +1,9 @@
 import { axiosInstance } from '../../api/axiosInstance'
-import type { Bookmark, Dashboard, NotificationSettings, Profile, RunRecord, Trip } from './types'
+import type { Bookmark, Dashboard, NotificationSettings, Profile, RunRecord, RunRecordDetail, Trip } from './types'
 export const myPageService = {
   dashboard: () => axiosInstance.get<Dashboard>('/mypage').then(({ data }) => data),
   runs: () => axiosInstance.get<RunRecord[]>('/mypage/runs').then(({ data }) => data),
+  run: (id: string) => axiosInstance.get<RunRecordDetail>(`/mypage/runs/${id}`).then(({ data }) => data),
   bookmarks: () => axiosInstance.get<Bookmark[]>('/mypage/bookmarks').then(({ data }) => data),
   removeBookmark: (id: string) => axiosInstance.delete(`/mypage/bookmarks/${id}`),
   trips: () => axiosInstance.get<Trip[]>('/mypage/trips').then(({ data }) => data),

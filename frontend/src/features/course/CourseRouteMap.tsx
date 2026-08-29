@@ -40,7 +40,7 @@ export function CourseRouteMap({
       .then(() => {
         if (disposed || !containerRef.current || !window.kakao) return
         const maps = window.kakao.maps
-        const center = routeCoordinates[0] ?? waypoints[0] ?? currentPosition ?? JEJU_CENTER
+        const center = routeCoordinates[0] ?? recordedPath[0] ?? waypoints[0] ?? currentPosition ?? JEJU_CENTER
         const map = new maps.Map(containerRef.current, {
           center: new maps.LatLng(center.lat, center.lng),
           level: 5,
@@ -114,7 +114,7 @@ export function CourseRouteMap({
 
   useEffect(() => {
     if (!ready || !mapRef.current || !window.kakao) return
-    const points = [...routeCoordinates, ...waypoints.map(({ lat, lng }) => ({ lat, lng }))]
+    const points = [...routeCoordinates, ...recordedPath, ...waypoints.map(({ lat, lng }) => ({ lat, lng }))]
     if (points.length === 0) return
     if (points.length === 1) {
       mapRef.current.setCenter(new window.kakao.maps.LatLng(points[0].lat, points[0].lng))
@@ -123,7 +123,7 @@ export function CourseRouteMap({
     const bounds = new window.kakao.maps.LatLngBounds()
     points.forEach((point) => bounds.extend(new window.kakao!.maps.LatLng(point.lat, point.lng)))
     window.setTimeout(() => mapRef.current?.setBounds(bounds), 0)
-  }, [ready, routeCoordinates, waypoints])
+  }, [ready, recordedPath, routeCoordinates, waypoints])
 
   function zoomBy(delta: number) {
     if (!mapRef.current) return

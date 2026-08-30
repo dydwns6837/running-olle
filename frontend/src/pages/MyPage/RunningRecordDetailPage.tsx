@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { CourseRouteMap } from '../../features/course/CourseRouteMap'
 import { myPageService } from '../../features/mypage/myPageService'
-import type { RunRecordDetail } from '../../features/mypage/types'
+import type { RunRecordDetail, RunRouteCoordinate } from '../../features/mypage/types'
 import './mypage.css'
 
 const courseTypeLabels = {
@@ -77,10 +77,15 @@ export function RunningRecordDetailPage() {
     )
   }
 
-  const routeEnd = record.recordedRouteCoordinates.at(-1) ?? record.plannedRouteCoordinates.at(-1) ?? null
   const hasCourse = record.courseId !== null
   const courseTypeLabel = record.courseType ? courseTypeLabels[record.courseType] : '자유 러닝'
   const difficultyLabel = record.courseDifficulty ? difficultyLabels[record.courseDifficulty] : null
+  const hasMeaningfulRecordedRoute = isMeaningfulRoute(record.recordedRouteCoordinates, record.distanceKm)
+  const recordedPathForMap = hasMeaningfulRecordedRoute || !hasCourse ? record.recordedRouteCoordinates : []
+  const mapFitTarget = hasMeaningfulRecordedRoute ? 'recorded' : hasCourse ? 'planned' : 'recorded'
+  const hasCourseDeviation = hasCourse
+    && hasMeaningfulRecordedRoute
+    && isRouteDeviatedFromCourse(record.recordedRouteCoordinates, record.plannedRouteCoordinates)
 
   return (
     <div className="my-screen run-detail-screen">
@@ -95,17 +100,26 @@ export function RunningRecordDetailPage() {
         <div className="run-detail-map-card">
           <CourseRouteMap
             routeCoordinates={record.plannedRouteCoordinates}
-            recordedPath={record.recordedRouteCoordinates}
+            recordedPath={recordedPathForMap}
             waypoints={record.courseWaypoints}
-            currentPosition={routeEnd}
+            fitTarget={mapFitTarget}
+            plannedRouteStyle={{ strokeWeight: 4, strokeColor: '#2563EB', strokeOpacity: 0.42, strokeStyle: 'shortdash' }}
+            recordedRouteStyle={{ strokeWeight: 7, strokeColor: '#FF6F0F', strokeOpacity: 0.96, strokeStyle: 'solid' }}
+            showCurrentPositionMarker={false}
             className="run-detail-map"
             showZoomControls
           />
         </div>
         <div className="run-detail-legend">
           {hasCourse && <span><i className="planned" />원본 코스</span>}
-          <span><i className="recorded" />실제 기록</span>
+          {(hasMeaningfulRecordedRoute || !hasCourse) && <span><i className="recorded" />실제 기록</span>}
         </div>
+        {hasCourse && !hasMeaningfulRecordedRoute && (
+          <p className="run-detail-map-notice">실제 위치 기록이 충분하지 않아 원본 코스 기준으로 보여줘요.</p>
+        )}
+        {hasCourseDeviation && (
+          <p className="run-detail-map-notice">원본 코스를 벗어난 구간이 있어 실제로 뛴 경로 기준으로 보여줘요.</p>
+        )}
 
         <section className="run-detail-stats" aria-label="러닝 기록 통계">
           <div><span>달린 거리</span><strong>{record.distanceKm.toFixed(1)}<small>km</small></strong></div>
@@ -207,4 +221,50 @@ function formatPace(value: number | null) {
 function formatCalories(value: number | null) {
   if (value === null) return '0'
   return value.toFixed(0)
+}
+
+function isMeaningfulRoute(coordinates: RunRouteCoordinate[], distanceKm: number) {
+  return coordinates.length >= 2 && (distanceKm >= 0.05 || calculateRouteDistanceKm(coordinates) >= 0.05)
+}
+
+function calculateRouteDistanceKm(coordinates: RunRouteCoordinate[]) {
+  let total = 0
+  for (let index = 1; index < coordinates.length; index += 1) {
+    total += distanceKm(coordinates[index - 1], coordinates[index])
+  }
+  return total
+}
+
+function isRouteDeviatedFromCourse(recordedRoute: RunRouteCoordinate[], plannedRoute: RunRouteCoordinate[]) {
+  if (recordedRoute.length < 2 || plannedRoute.length < 2) return false
+  const samples = sampleCoordinates(recordedRoute, 24)
+  const deviatedSamples = samples.filter((coordinate) => nearestDistanceKm(coordinate, plannedRoute) > 0.3)
+  return deviatedSamples.length / samples.length >= 0.35
+}
+
+function sampleCoordinates(coordinates: RunRouteCoordinate[], maxSamples: number) {
+  if (coordinates.length <= maxSamples) return coordinates
+  const lastIndex = coordinates.length - 1
+  return Array.from({ length: maxSamples }, (_, index) => {
+    const sourceIndex = Math.round(index * lastIndex / (maxSamples - 1))
+    return coordinates[sourceIndex]
+  })
+}
+
+function nearestDistanceKm(target: RunRouteCoordinate, coordinates: RunRouteCoordinate[]) {
+  return coordinates.reduce((nearest, coordinate) => Math.min(nearest, distanceKm(target, coordinate)), Number.POSITIVE_INFINITY)
+}
+
+function distanceKm(a: RunRouteCoordinate, b: RunRouteCoordinate) {
+  const earthRadiusKm = 6371
+  const dLat = toRad(b.lat - a.lat)
+  const dLng = toRad(b.lng - a.lng)
+  const lat1 = toRad(a.lat)
+  const lat2 = toRad(b.lat)
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2
+  return 2 * earthRadiusKm * Math.asin(Math.sqrt(h))
+}
+
+function toRad(value: number) {
+  return value * Math.PI / 180
 }

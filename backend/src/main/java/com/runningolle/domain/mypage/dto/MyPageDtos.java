@@ -1,7 +1,10 @@
 package com.runningolle.domain.mypage.dto;
 
+import com.runningolle.domain.course.dto.CourseWaypointResponse;
+import com.runningolle.domain.course.dto.RouteCoordinateResponse;
 import com.runningolle.domain.course.enums.CourseType;
 import com.runningolle.domain.course.enums.Difficulty;
+import com.runningolle.domain.running.enums.RunningMode;
 import com.runningolle.domain.user.enums.PreferredDifficulty;
 import com.runningolle.domain.user.enums.PreferredDistance;
 import java.math.BigDecimal;
@@ -19,6 +22,14 @@ public final class MyPageDtos {
     public record Dashboard(Profile profile, BigDecimal totalDistanceKm, long completionCount, long uniqueCourseCount) {}
     public record Run(UUID id, UUID courseId, String courseName, CourseType courseType, String thumbnailImageUrl,
                       BigDecimal distanceKm, int durationSeconds, BigDecimal averagePace, LocalDateTime startedAt) {}
+    public record RunDetail(UUID id, UUID courseId, String courseName, String courseDescription,
+                            CourseType courseType, Difficulty courseDifficulty, String thumbnailImageUrl,
+                            RunningMode runningMode, BigDecimal distanceKm, int durationSeconds,
+                            BigDecimal averagePace, BigDecimal calories, BigDecimal elevationGainM,
+                            LocalDateTime startedAt, LocalDateTime endedAt,
+                            List<RouteCoordinateResponse> recordedRouteCoordinates,
+                            List<RouteCoordinateResponse> plannedRouteCoordinates,
+                            List<CourseWaypointResponse> courseWaypoints) {}
     public record Bookmark(UUID bookmarkId, UUID courseId, String name, CourseType courseType,
                            BigDecimal distanceKm, Difficulty difficulty, String thumbnailImageUrl, boolean mine) {}
     public record TripResponse(UUID id, String name, String region, LocalDate startDate, LocalDate endDate,

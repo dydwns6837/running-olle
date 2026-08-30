@@ -49,6 +49,7 @@ export function CourseDetailPage() {
       state: {
         courseId: course.id,
         courseName: course.name,
+        runningMode: 'COURSE_SELECT',
       },
     })
   }

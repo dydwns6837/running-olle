@@ -84,6 +84,7 @@ export function CourseListView({
       state: {
         courseId: course.id,
         courseName: course.name,
+        runningMode: 'COURSE_SELECT',
       },
     })
   }

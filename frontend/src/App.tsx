@@ -16,6 +16,7 @@ import { FreeRunReadyPage } from './pages/Running/FreeRunReadyPage'
 import { LiveRunningPage } from './pages/Running/LiveRunningPage'
 import { RunningCompletePage } from './pages/Running/RunningCompletePage'
 import { RunningSelectPage } from './pages/Running/RunningSelectPage'
+import { RunningRecordDetailPage } from './pages/MyPage/RunningRecordDetailPage'
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/mypage" element={<MyPage />} />
           <Route path="/mypage/history" element={<RunningHistoryPage />} />
           <Route path="/mypage/history/all" element={<CompletedRunsPage />} />
+          <Route path="/mypage/history/:recordId" element={<RunningRecordDetailPage />} />
           <Route path="/mypage/bookmarks" element={<BookmarksPage />} />
           <Route path="/mypage/reports" element={<ReportsPage />} />
           <Route path="/mypage/trips" element={<TripsPage />} />

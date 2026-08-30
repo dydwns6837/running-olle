@@ -124,6 +124,20 @@ export function CourseSaveDetailPage() {
     navigate('/courses/create', { replace: true })
   }
 
+  function finishAndStartRun() {
+    if (!createdCourseId) return
+    const courseName = name.trim() || suggestedName || '새 코스'
+    resetDraft()
+    navigate('/running/free', {
+      replace: true,
+      state: {
+        courseId: createdCourseId,
+        courseName,
+        runningMode: 'COURSE_CREATE',
+      },
+    })
+  }
+
   return (
     <main className="course-save-page">
       <header className="course-save-header">
@@ -246,6 +260,7 @@ export function CourseSaveDetailPage() {
             <p>저장된 코스 ID</p>
             <code>{createdCourseId}</code>
             <div>
+              <button type="button" onClick={finishAndStartRun}>이 코스로 달리기</button>
               <button type="button" onClick={finishAndCreateAnother}>새 코스 만들기</button>
               <button type="button" onClick={finishAndGoCourses}>코스 목록으로</button>
             </div>

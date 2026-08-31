@@ -89,10 +89,11 @@ jobs:
             --comment "Deploy Running Olle ${{ github.sha }}" \
             --parameters '{"commands":[
               "set -e",
-              "mkdir -p /opt/running-olle",
+              "mkdir -p /opt/running-olle /opt/running-olle-config",
+              "test -f /opt/running-olle-config/.env || { echo Missing /opt/running-olle-config/.env; exit 1; }",
               "if [ ! -d /opt/running-olle/.git ]; then git clone -b develop https://github.com/running-olle/running-olle.git /opt/running-olle; else cd /opt/running-olle && git fetch origin develop && git reset --hard origin/develop; fi",
+              "ln -sfn /opt/running-olle-config/.env /opt/running-olle/.env",
               "cd /opt/running-olle",
-              "test -f .env || { echo Missing /opt/running-olle/.env; exit 1; }",
               "aws ecr get-login-password --region ${{ vars.AWS_REGION }} | docker login --username AWS --password-stdin ${{ needs.build-and-push.outputs.registry }}",
               "docker compose -f docker-compose.prod.yml pull",
               "docker compose -f docker-compose.prod.yml up -d --remove-orphans",

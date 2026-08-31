@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { axiosInstance } from '../../api/axiosInstance'
 import { CourseListView } from '../../features/course/CourseListView'
 import { myPageService } from '../../features/mypage/myPageService'
-import type { Dashboard, NotificationSettings, Profile, RunRecord, Trip } from '../../features/mypage/types'
+import type { Dashboard, NotificationSettings, Profile, RunRecord, Trip, Visit } from '../../features/mypage/types'
 import './mypage.css'
 
 const EMPTY_PROFILE: Profile = { nickname: '러너', profileImageUrl: null, bio: null, userTypes: [], preferredDistance: null, preferredDifficulty: null, createdAt: '', accountStatus: 'ACTIVE' }
@@ -38,7 +38,48 @@ export function MyPage() {
 function Menu({ to, icon, label }: { to: string; icon: string; label: string }) { return <Link to={to}><span><Icon name={icon}/></span><b>{label}</b><Icon name="chevron" size={19}/></Link> }
 function RunCard({ run }: { run: RunRecord }) { return <Link className="run-row" to={`/mypage/history/${run.id}`}><div className="thumb" style={imageStyle(run.thumbnailImageUrl)}>{!run.thumbnailImageUrl && '🏃'}</div><div><span className="type-pill">{run.courseType === 'SPOT_COURSE' ? '스팟 코스' : run.courseType ? '러닝 코스' : '자유 러닝'}</span><small>{new Date(run.startedAt).toLocaleDateString('ko-KR')}</small><h3>{run.courseName || '나만의 자유 러닝'}</h3><p><b>{run.distanceKm.toFixed(1)}km</b><i>·</i>{formatTime(run.durationSeconds)}<i>·</i>{pace(run.averagePace)}/km</p></div><Icon name="chevron" size={18}/></Link> }
 
-export function RunningHistoryPage() { const [runs,setRuns]=useState<RunRecord[]|null>(null); useEffect(()=>{myPageService.runs().then(setRuns).catch(()=>setRuns([]))},[]); return <div className="my-screen"><PageHeader title="러닝 히스토리"/><main className="my-content"><div className="section-head"><h2>최근 완주</h2><Link to="/mypage/history/all">전체보기</Link></div>{runs===null?<Loading/>:runs.length?<div className="run-list">{runs.slice(0,3).map(r=><RunCard key={r.id} run={r}/>)}</div>:<Empty title="아직 러닝 기록이 없어요" description="첫 코스를 달리면 거리와 페이스가 여기에 기록돼요." action={<Link className="primary-link" to="/running">러닝 시작하기</Link>}/>}<div className="section-head visit-head"><h2>방문 장소</h2></div><Empty icon="map" title="기록된 방문 장소가 없어요" description="스팟 코스를 달리고 웨이포인트를 방문해보세요."/></main></div> }
+function VisitCard({ visit, compact = false }: { visit: Visit; compact?: boolean }) {
+  const mapUrl = `https://map.kakao.com/link/map/${encodeURIComponent(visit.name)},${visit.latitude},${visit.longitude}`
+  return <article className={`visit-card ${compact ? 'compact' : ''}`}>
+    <div className="visit-image" style={imageStyle(visit.imageUrl)}>{!visit.imageUrl && <Icon name="map" size={28}/>}</div>
+    <div className="visit-copy">
+      <div><span>{new Date(visit.visitedAt).toLocaleDateString('ko-KR')}</span><small>{visit.orderIndex}번째 지점</small></div>
+      <h3>{visit.name}</h3>
+      <p className="visit-course">{visit.courseName}</p>
+      {!compact && visit.description && <p className="visit-description">{visit.description}</p>}
+    </div>
+    <a href={mapUrl} target="_blank" rel="noreferrer" aria-label={`${visit.name} 지도에서 보기`}><Icon name="map" size={20}/></a>
+  </article>
+}
+
+export function RunningHistoryPage() {
+  const [runs,setRuns]=useState<RunRecord[]|null>(null)
+  const [visits,setVisits]=useState<Visit[]|null>(null)
+  useEffect(()=>{
+    myPageService.runs().then(setRuns).catch(()=>setRuns([]))
+    myPageService.visits().then(setVisits).catch(()=>setVisits([]))
+  },[])
+  return <div className="my-screen"><PageHeader title="러닝 히스토리"/><main className="my-content">
+    <div className="section-head"><h2>최근 완주</h2><Link to="/mypage/history/all">전체보기</Link></div>
+    {runs===null
+      ? <Loading/>
+      : runs.length
+        ? <div className="run-list">{runs.slice(0,3).map(r=><RunCard key={r.id} run={r}/>)}</div>
+        : <Empty title="아직 러닝 기록이 없어요" description="첫 코스를 달리면 거리와 페이스가 여기에 기록돼요." action={<Link className="primary-link" to="/running">러닝 시작하기</Link>}/>
+    }
+    <div className="section-head visit-head"><h2>방문 장소</h2>{Boolean(visits?.length) && <Link to="/mypage/history/visits">전체보기</Link>}</div>
+    {visits===null?<Loading/>:visits.length?<div className="visit-list">{visits.slice(0,2).map(v=><VisitCard compact key={v.id} visit={v}/>)}</div>:<Empty icon="map" title="기록된 방문 장소가 없어요" description="스팟 코스를 달리고 웨이포인트를 방문해보세요."/>}
+  </main></div>
+}
+
+export function VisitedPlacesPage() {
+  const [visits,setVisits]=useState<Visit[]|null>(null)
+  useEffect(()=>{myPageService.visits().then(setVisits).catch(()=>setVisits([]))},[])
+  return <div className="my-screen"><PageHeader title="방문 장소"/><main className="my-content">
+    <div className="info-box">러닝 중 실제로 통과한 코스 지점을 최근 방문순으로 보여드려요.</div>
+    {visits===null?<Loading/>:visits.length?<div className="visit-list visit-list-all">{visits.map(v=><VisitCard key={v.id} visit={v}/>)}</div>:<Empty icon="map" title="기록된 방문 장소가 없어요" description="코스의 웨이포인트를 방문하면 이곳에 기록돼요."/>}
+  </main></div>
+}
 export function CompletedRunsPage() { const [runs,setRuns]=useState<RunRecord[]|null>(null);const [filter,setFilter]=useState('ALL');useEffect(()=>{myPageService.runs().then(setRuns).catch(()=>setRuns([]))},[]);const filtered=useMemo(()=>runs?.filter(r=>filter==='ALL'||r.courseType===filter)??[],[runs,filter]);const distance=runs?.reduce((s,r)=>s+r.distanceKm,0)??0;return <div className="my-screen"><PageHeader title="완주 코스"/><main className="my-content"><section className="summary-cards"><div><span>총 완주</span><b>{runs?.length??0}회</b></div><div><span>달린 코스</span><b>{new Set(runs?.map(r=>r.courseId).filter(Boolean)).size}개</b></div><div><span>누적 거리</span><b>{distance.toFixed(1)}km</b></div></section><Filter value={filter} setValue={setFilter} options={[['ALL','전체'],['RUNNING_COURSE','러닝 코스'],['SPOT_COURSE','스팟 코스']]}/>{runs===null?<Loading/>:filtered.length?<div className="run-list">{filtered.map(r=><RunCard key={r.id} run={r}/>)}</div>:<Empty title="조건에 맞는 완주 기록이 없어요" description="필터를 바꾸거나 새로운 코스에 도전해보세요."/>}</main></div> }
 function Filter({value,setValue,options}:{value:string;setValue:(x:string)=>void;options:string[][]}){return <div className="chips scroll">{options.map(([v,l])=><button className={value===v?'active':''} onClick={()=>setValue(v)} key={v}>{l}</button>)}</div>}
 

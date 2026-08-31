@@ -8,6 +8,7 @@ import com.runningolle.domain.course.repository.CourseBookmarkRepository;
 import com.runningolle.domain.course.repository.CourseWaypointRepository;
 import com.runningolle.domain.mypage.dto.MyPageDtos;
 import com.runningolle.domain.running.entity.RunningRecord;
+import com.runningolle.domain.running.entity.RunningWaypointVisit;
 import com.runningolle.domain.running.repository.RunningRecordRepository;
 import com.runningolle.domain.running.repository.RunningWaypointVisitRepository;
 import com.runningolle.domain.trip.entity.Trip;
@@ -82,6 +83,14 @@ public class MyPageService {
     public List<MyPageDtos.Run> runs(UUID userId) {
         activeUser(userId);
         return runningRecordRepository.findAllByUserIdOrderByStartedAtDesc(userId).stream().map(this::runDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<MyPageDtos.Visit> visits(UUID userId) {
+        activeUser(userId);
+        return visitRepository.findAllByRunningRecordUserIdOrderByVisitedAtDesc(userId).stream()
+                .map(this::visitDto)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -179,6 +188,16 @@ public class MyPageService {
         return new MyPageDtos.Run(r.getId(), c == null ? null : c.getId(), c == null ? null : c.getName(),
                 c == null ? null : c.getCourseType(), c == null ? null : c.getThumbnailImageUrl(), r.getTotalDistanceKm(),
                 r.getTotalDurationSeconds(), r.getAvgPace(), r.getStartedAt());
+    }
+    private MyPageDtos.Visit visitDto(RunningWaypointVisit visit) {
+        var waypoint = visit.getCourseWaypoint();
+        Course course = waypoint.getCourse();
+        String imageUrl = visit.getPhotoUrl() != null ? visit.getPhotoUrl() : course.getThumbnailImageUrl();
+        return new MyPageDtos.Visit(
+                visit.getId(), waypoint.getId(), course.getId(), course.getName(), waypoint.getName(),
+                waypoint.getDescription(), imageUrl, visit.getVisitedAt(), waypoint.getOrderIndex(),
+                waypoint.getLocation().getY(), waypoint.getLocation().getX()
+        );
     }
     private MyPageDtos.TripResponse tripDto(Trip trip) {
         List<RunningRecord> runs = runningRecordRepository.findAllByTripIdOrderByStartedAtDesc(trip.getId());

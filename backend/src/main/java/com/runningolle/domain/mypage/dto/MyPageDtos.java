@@ -19,6 +19,9 @@ public final class MyPageDtos {
     public record Dashboard(Profile profile, BigDecimal totalDistanceKm, long completionCount, long uniqueCourseCount) {}
     public record Run(UUID id, UUID courseId, String courseName, CourseType courseType, String thumbnailImageUrl,
                       BigDecimal distanceKm, int durationSeconds, BigDecimal averagePace, LocalDateTime startedAt) {}
+    public record Visit(UUID id, UUID waypointId, UUID courseId, String courseName, String name,
+                        String description, String imageUrl, LocalDateTime visitedAt, int orderIndex,
+                        double latitude, double longitude) {}
     public record Bookmark(UUID bookmarkId, UUID courseId, String name, CourseType courseType,
                            BigDecimal distanceKm, Difficulty difficulty, String thumbnailImageUrl, boolean mine) {}
     public record TripResponse(UUID id, String name, String region, LocalDate startDate, LocalDate endDate,

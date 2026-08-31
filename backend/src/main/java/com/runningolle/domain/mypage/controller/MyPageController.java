@@ -17,6 +17,7 @@ public class MyPageController {
     private UUID userId(Authentication authentication) { return UUID.fromString(authentication.getName()); }
     @GetMapping public MyPageDtos.Dashboard dashboard(Authentication authentication) { return service.dashboard(userId(authentication)); }
     @GetMapping("/runs") public List<MyPageDtos.Run> runs(Authentication authentication) { return service.runs(userId(authentication)); }
+    @GetMapping("/visits") public List<MyPageDtos.Visit> visits(Authentication authentication) { return service.visits(userId(authentication)); }
     @GetMapping("/bookmarks") public List<MyPageDtos.Bookmark> bookmarks(Authentication authentication) { return service.bookmarks(userId(authentication)); }
     @DeleteMapping("/bookmarks/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     public void removeBookmark(Authentication authentication, @PathVariable UUID id) { service.deleteBookmark(userId(authentication), id); }

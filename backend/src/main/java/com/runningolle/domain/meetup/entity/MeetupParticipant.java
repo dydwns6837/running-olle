@@ -59,4 +59,30 @@ public class MeetupParticipant {
 
     @Column(name = "responded_at")
     private LocalDateTime respondedAt;
+
+    public static MeetupParticipant create(Meetup meetup, User user, ParticipantStatus status) {
+        MeetupParticipant participant = new MeetupParticipant();
+        participant.meetup = meetup;
+        participant.user = user;
+        participant.status = status;
+        participant.requestedAt = LocalDateTime.now();
+        participant.respondedAt = status == ParticipantStatus.PENDING ? null : LocalDateTime.now();
+        return participant;
+    }
+
+    public void accept() {
+        this.status = ParticipantStatus.ACCEPTED;
+        this.respondedAt = LocalDateTime.now();
+    }
+
+    public void reject() {
+        this.status = ParticipantStatus.REJECTED;
+        this.respondedAt = LocalDateTime.now();
+    }
+
+    public void reapply(ParticipantStatus nextStatus) {
+        this.status = nextStatus;
+        this.requestedAt = LocalDateTime.now();
+        this.respondedAt = nextStatus == ParticipantStatus.PENDING ? null : LocalDateTime.now();
+    }
 }

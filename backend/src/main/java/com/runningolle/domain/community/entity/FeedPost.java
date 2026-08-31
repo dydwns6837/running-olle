@@ -72,4 +72,43 @@ public class FeedPost extends BaseTimeEntity {
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public static FeedPost create(
+            User user,
+            RunningRecord runningRecord,
+            Course course,
+            String content,
+            Visibility visibility,
+            String region,
+            boolean photoTagged
+    ) {
+        FeedPost feedPost = new FeedPost();
+        feedPost.user = user;
+        feedPost.runningRecord = runningRecord;
+        feedPost.course = course;
+        feedPost.content = content;
+        feedPost.visibility = visibility;
+        feedPost.region = region;
+        feedPost.isPhotoTagged = photoTagged;
+        return feedPost;
+    }
+
+    public void delete() {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void update(
+            Course course,
+            String content,
+            Visibility visibility,
+            String region,
+            boolean photoTagged
+    ) {
+        this.course = course;
+        this.content = content;
+        this.visibility = visibility;
+        this.region = region;
+        this.isPhotoTagged = photoTagged;
+    }
 }

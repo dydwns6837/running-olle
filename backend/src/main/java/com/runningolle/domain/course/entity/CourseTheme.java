@@ -43,4 +43,11 @@ public class CourseTheme {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "theme_id", nullable = false)
     private Theme theme;
+
+    public static CourseTheme of(Course course, Theme theme) {
+        CourseTheme courseTheme = new CourseTheme();
+        courseTheme.course = course;
+        courseTheme.theme = theme;
+        return courseTheme;
+    }
 }

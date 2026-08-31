@@ -24,6 +24,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
     implementation 'org.hibernate.orm:hibernate-spatial:6.4.4.Final'
     implementation 'org.locationtech.jts:jts-core:1.19.0'
@@ -43,6 +44,7 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    systemProperty 'runningolle.external-smoke', System.getProperty('runningolle.external-smoke')
 }
 
 tasks.named('bootJar') {

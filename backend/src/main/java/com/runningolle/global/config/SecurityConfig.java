@@ -39,6 +39,9 @@ public class SecurityConfig {
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
+    @Value("${tourism.sync.manual-sync-enabled:false}")
+    private boolean tourismManualSyncEnabled;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -48,20 +51,25 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/",
-                                "/error",
-                                "/favicon.ico",
-                                "/h2-console/**",
-                                "/api/login/**",
-                                "/api/oauth2/**",
-                                "/actuator/health"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/public/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
-                        .anyRequest().authenticated()
-                )
+                .authorizeHttpRequests(auth -> {
+                    auth.requestMatchers(
+                            "/",
+                            "/error",
+                            "/favicon.ico",
+                            "/uploads/**",
+                            "/ws/**",
+                            "/h2-console/**",
+                            "/api/login/**",
+                            "/api/oauth2/**",
+                            "/actuator/health"
+                    ).permitAll();
+                    auth.requestMatchers(HttpMethod.GET, "/api/public/**").permitAll();
+                    auth.requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll();
+                    if (tourismManualSyncEnabled) {
+                        auth.requestMatchers(HttpMethod.POST, "/api/admin/tourism/sync/jeju").permitAll();
+                    }
+                    auth.anyRequest().authenticated();
+                })
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(authorization -> authorization.baseUri("/api/oauth2/authorization"))
                         .redirectionEndpoint(redirection -> redirection.baseUri("/api/login/oauth2/code/*"))

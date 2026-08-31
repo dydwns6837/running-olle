@@ -50,4 +50,17 @@ public class ChatRoomParticipant {
 
     @Column(name = "joined_at", nullable = false)
     private LocalDateTime joinedAt;
+
+    public static ChatRoomParticipant create(ChatRoom chatRoom, User user) {
+        ChatRoomParticipant participant = new ChatRoomParticipant();
+        participant.chatRoom = chatRoom;
+        participant.user = user;
+        participant.joinedAt = LocalDateTime.now();
+        participant.lastReadAt = null;
+        return participant;
+    }
+
+    public void markReadNow() {
+        this.lastReadAt = LocalDateTime.now();
+    }
 }

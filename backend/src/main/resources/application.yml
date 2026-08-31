@@ -44,6 +44,19 @@ server:
 
 app:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  storage:
+    local-dir: ${APP_STORAGE_LOCAL_DIR:uploads}
+    public-base-path: ${APP_STORAGE_PUBLIC_BASE_PATH:/uploads}
+
+tourism:
+  sync:
+    area-code: "39"
+    content-type-ids: [ "12", "14", "28" ]
+    page-size: 100
+    scheduler-enabled: false
+    manual-sync-enabled: false
+    cron: "0 0 4 * * *"
+    zone: Asia/Seoul
 
 jwt:
   secret: ${JWT_SECRET}

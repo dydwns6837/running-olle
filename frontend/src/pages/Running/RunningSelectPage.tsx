@@ -12,7 +12,7 @@ const options = [
     title: '코스 만들고 달리기',
     description: <>나만의 코스를 만들고<br />달려요</>,
     icon: 'make' as const,
-    action: '/courses?mode=create',
+    action: '/courses/create',
   },
   {
     title: '즉시 달리기',

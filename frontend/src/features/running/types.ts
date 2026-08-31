@@ -6,10 +6,14 @@ export type GeoPoint = {
 }
 
 export type RunningPhase = 'running' | 'paused'
+export type RunningMode = 'COURSE_SELECT' | 'COURSE_CREATE' | 'FREE_RUN'
 
 export type SavedRunningRecord = {
   localId: string
   serverId?: string
+  courseId: string | null
+  courseName: string | null
+  runningMode: RunningMode
   distanceMeters: number
   durationSeconds: number
   averagePace: number | null
@@ -18,12 +22,4 @@ export type SavedRunningRecord = {
   endedAt: string
   route: GeoPoint[]
   syncStatus: 'synced' | 'pending'
-}
-
-declare global {
-  interface Window {
-    kakao?: {
-      maps: any
-    }
-  }
 }

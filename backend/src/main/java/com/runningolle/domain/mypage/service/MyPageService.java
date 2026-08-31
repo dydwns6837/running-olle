@@ -2,7 +2,10 @@ package com.runningolle.domain.mypage.service;
 
 import com.runningolle.domain.course.entity.Course;
 import com.runningolle.domain.course.entity.CourseBookmark;
+import com.runningolle.domain.course.dto.CourseWaypointResponse;
+import com.runningolle.domain.course.dto.RouteCoordinateResponse;
 import com.runningolle.domain.course.repository.CourseBookmarkRepository;
+import com.runningolle.domain.course.repository.CourseWaypointRepository;
 import com.runningolle.domain.mypage.dto.MyPageDtos;
 import com.runningolle.domain.running.entity.RunningRecord;
 import com.runningolle.domain.running.entity.RunningWaypointVisit;
@@ -40,6 +43,7 @@ public class MyPageService {
     private final RunningRecordRepository runningRecordRepository;
     private final RunningWaypointVisitRepository visitRepository;
     private final CourseBookmarkRepository bookmarkRepository;
+    private final CourseWaypointRepository courseWaypointRepository;
     private final TripRepository tripRepository;
 
     @Transactional(readOnly = true)
@@ -87,6 +91,41 @@ public class MyPageService {
         return visitRepository.findAllByRunningRecordUserIdOrderByVisitedAtDesc(userId).stream()
                 .map(this::visitDto)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public MyPageDtos.RunDetail runDetail(UUID userId, UUID runId) {
+        activeUser(userId);
+        RunningRecord record = runningRecordRepository.findByIdAndUserId(runId, userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "러닝 기록을 찾을 수 없습니다."));
+        Course course = record.getCourse();
+        List<CourseWaypointResponse> waypoints = course == null
+                ? List.of()
+                : courseWaypointRepository.findByCourse_IdOrderByOrderIndexAsc(course.getId())
+                .stream()
+                .map(CourseWaypointResponse::from)
+                .toList();
+
+        return new MyPageDtos.RunDetail(
+                record.getId(),
+                course == null ? null : course.getId(),
+                course == null ? null : course.getName(),
+                course == null ? null : course.getDescription(),
+                course == null ? null : course.getCourseType(),
+                course == null ? null : course.getDifficulty(),
+                course == null ? null : course.getThumbnailImageUrl(),
+                record.getRunningMode(),
+                record.getTotalDistanceKm(),
+                record.getTotalDurationSeconds(),
+                record.getAvgPace(),
+                record.getCalories(),
+                record.getElevationGainM(),
+                record.getStartedAt(),
+                record.getEndedAt(),
+                RouteCoordinateResponse.from(record.getRoute()),
+                course == null ? List.of() : RouteCoordinateResponse.from(course.getRoute()),
+                waypoints
+        );
     }
 
     @Transactional(readOnly = true)

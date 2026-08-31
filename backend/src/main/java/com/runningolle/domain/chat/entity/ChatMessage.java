@@ -46,10 +46,33 @@ public class ChatMessage extends BaseCreatedAtEntity {
     @Column(name = "content", nullable = false, columnDefinition = "text")
     private String content;
 
+    @Column(name = "is_system", nullable = false)
+    @ColumnDefault("false")
+    private Boolean isSystem = false;
+
     @Column(name = "is_deleted", nullable = false)
     @ColumnDefault("false")
     private Boolean isDeleted = false;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
+
+    public static ChatMessage create(ChatRoom chatRoom, User sender, String content) {
+        ChatMessage message = new ChatMessage();
+        message.chatRoom = chatRoom;
+        message.sender = sender;
+        message.content = content;
+        return message;
+    }
+
+    public static ChatMessage createSystem(ChatRoom chatRoom, User sender, String content) {
+        ChatMessage message = create(chatRoom, sender, content);
+        message.isSystem = true;
+        return message;
+    }
+
+    public void delete() {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
+    }
 }

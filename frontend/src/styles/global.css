@@ -422,3 +422,39 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .course-library-actions, .course-library-actions.has-secondary { grid-template-columns: 1fr; }
   .course-detail-map-card { height: 250px; }
 }
+
+/* In-app notifications */
+.notification-center { position: relative; z-index: 70; }
+.notification-bell { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 50%; color: #594136; background: rgba(245,245,245,.85); }
+.notification-bell > span { position: absolute; top: -2px; right: -4px; display: grid; place-items: center; min-width: 19px; height: 19px; padding: 0 5px; border: 2px solid #fff8f6; border-radius: 99px; color: #fff; background: #e5484d; font-size: 9px; font-weight: 900; line-height: 1; }
+.notification-panel { position: fixed; z-index: 90; top: 62px; left: 50%; width: min(calc(100% - 24px), 406px); max-height: min(620px, calc(100dvh - 155px)); overflow: hidden; transform: translateX(-50%); border: 1px solid #f0ded6; border-radius: 20px; color: #261912; background: #fff; box-shadow: 0 18px 44px rgba(38,25,18,.2); text-align: left; }
+.notification-panel > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; padding: 12px 16px; border-bottom: 1px solid #f2e8e4; background: #fffaf8; }
+.notification-panel > header > div:first-child { display: flex; align-items: baseline; gap: 8px; }
+.notification-panel h2 { margin: 0; font-size: 18px; }
+.notification-panel > header span { color: #ff6f0f; font-size: 10px; font-weight: 800; }
+.notification-panel > header > div:last-child { display: flex; gap: 5px; }
+.notification-panel > header button { min-height: 30px; padding: 0 7px; border-radius: 8px; color: #7a5b4d; background: transparent; font-size: 10px; font-weight: 800; }
+.notification-panel > header button:hover { background: #fff0e8; }
+.notification-list { max-height: calc(min(620px, 100dvh - 155px) - 64px); overflow-y: auto; overscroll-behavior: contain; }
+.notification-item { position: relative; display: grid; grid-template-columns: 40px 1fr 8px; align-items: start; gap: 11px; width: 100%; min-height: 96px; padding: 15px 14px; border: 0; border-bottom: 1px solid #f4ece8; color: #261912; background: #fff; text-align: left; }
+.notification-item.unread { background: #fff8f3; }
+.notification-item:hover { background: #fff4ed; }
+.notification-type { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 13px; font-size: 16px; font-weight: 900; }
+.notification-type.social { color: #d83b55; background: #fff0f2; }
+.notification-type.meetup { color: #bd570d; background: #fff0df; }
+.notification-copy { min-width: 0; }
+.notification-copy strong,.notification-copy > span,.notification-copy time { display: block; }
+.notification-copy strong { overflow: hidden; font-size: 13px; line-height: 1.4; text-overflow: ellipsis; white-space: nowrap; }
+.notification-copy > span { margin-top: 4px; color: #6f5a50; font-size: 11px; line-height: 1.45; }
+.notification-copy time { margin-top: 6px; color: #9a8880; font-size: 9px; }
+.notification-item > i { width: 7px; height: 7px; margin-top: 6px; border-radius: 50%; background: #ff6f0f; }
+.notification-state { margin: 0; padding: 42px 20px; color: #8d7164; font-size: 12px; text-align: center; }
+.notification-state.error { color: #b91c1c; }
+.notification-empty { display: flex; flex-direction: column; align-items: center; padding: 48px 20px; color: #b29d93; text-align: center; }
+.notification-empty strong { margin-top: 13px; color: #594136; font-size: 14px; }
+.notification-empty span { margin-top: 6px; font-size: 10px; line-height: 1.5; }
+@media (max-width: 360px) {
+  .notification-panel { width: calc(100% - 16px); }
+  .notification-panel > header { padding-inline: 12px; }
+  .notification-panel > header span { display: none; }
+}

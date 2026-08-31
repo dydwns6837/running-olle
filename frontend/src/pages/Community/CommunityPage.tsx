@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { ChatList } from '../../features/community/ChatList'
 import { ChatRoomModal } from '../../features/community/ChatRoomModal'
 import { createInquiryRoom, deleteChatMessage, getChatRoom, getChatRooms, sendChatMessage } from '../../features/community/chatApi'
@@ -40,7 +41,8 @@ const filters: Array<{ key: FeedFilter; label: string }> = [
 ]
 
 export function CommunityPage() {
-  const [activeTab, setActiveTab] = useState<CommunityTab>('feed')
+  const { search } = useLocation()
+  const [activeTab, setActiveTab] = useState<CommunityTab>(() => getTabFromSearch(search))
   const [activeFilter, setActiveFilter] = useState<FeedFilter>('all')
   const [meetupFilter, setMeetupFilter] = useState<MeetupFilter>('all')
   const [chatSearchOpen, setChatSearchOpen] = useState(false)
@@ -63,6 +65,10 @@ export function CommunityPage() {
   const [applicantsMeetupId, setApplicantsMeetupId] = useState<string | null>(null)
   const [selectedChatRoom, setSelectedChatRoom] = useState<ChatRoom | null>(null)
   const [requestSuccessMeetup, setRequestSuccessMeetup] = useState<Meetup | null>(null)
+
+  useEffect(() => {
+    setActiveTab(getTabFromSearch(search))
+  }, [search])
 
   useEffect(() => {
     let active = true
@@ -666,6 +672,11 @@ function mergeChatRooms(current: ChatRoom[], incoming: ChatRoom[]) {
 
 function getDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+function getTabFromSearch(search: string): CommunityTab {
+  const tab = new URLSearchParams(search).get('tab')
+  return tab === 'meetup' || tab === 'chat' ? tab : 'feed'
 }
 
 function getConsecutiveDateKeys(startDate: Date, days: number) {
